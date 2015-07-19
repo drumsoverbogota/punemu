@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		9FD8E9991B4266EF00AA5C04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8E9981B4266EF00AA5C04 /* main.cpp */; };
 		9FD8E9A01B42698700AA5C04 /* emu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8E99F1B42698600AA5C04 /* emu.cpp */; };
+		9FEB71231B5B48C600F3A821 /* readme.md in Sources */ = {isa = PBXBuildFile; fileRef = 9FEB71221B5B48C600F3A821 /* readme.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -28,6 +29,7 @@
 		9FD8E9981B4266EF00AA5C04 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		9FD8E99F1B42698600AA5C04 /* emu.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = emu.cpp; sourceTree = "<group>"; };
 		9FD8E9A11B42699400AA5C04 /* emu.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = emu.hpp; sourceTree = "<group>"; };
+		9FEB71221B5B48C600F3A821 /* readme.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = readme.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -44,6 +46,7 @@
 		9FD8E98C1B4266EF00AA5C04 = {
 			isa = PBXGroup;
 			children = (
+				9FEB71221B5B48C600F3A821 /* readme.md */,
 				9FD8E9971B4266EF00AA5C04 /* Emu */,
 				9FD8E9961B4266EF00AA5C04 /* Products */,
 			);
@@ -124,6 +127,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9FD8E9991B4266EF00AA5C04 /* main.cpp in Sources */,
+				9FEB71231B5B48C600F3A821 /* readme.md in Sources */,
 				9FD8E9A01B42698700AA5C04 /* emu.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -238,6 +242,7 @@
 				9FD8E99E1B4266EF00AA5C04 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
