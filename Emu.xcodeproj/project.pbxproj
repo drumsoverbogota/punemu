@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		9FD8E9991B4266EF00AA5C04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8E9981B4266EF00AA5C04 /* main.cpp */; };
+		9FD8E9A01B42698700AA5C04 /* emu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8E99F1B42698600AA5C04 /* emu.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +26,8 @@
 /* Begin PBXFileReference section */
 		9FD8E9951B4266EF00AA5C04 /* Emu */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Emu; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FD8E9981B4266EF00AA5C04 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		9FD8E99F1B42698600AA5C04 /* emu.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = emu.cpp; sourceTree = "<group>"; };
+		9FD8E9A11B42699400AA5C04 /* emu.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = emu.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +61,8 @@
 			isa = PBXGroup;
 			children = (
 				9FD8E9981B4266EF00AA5C04 /* main.cpp */,
+				9FD8E99F1B42698600AA5C04 /* emu.cpp */,
+				9FD8E9A11B42699400AA5C04 /* emu.hpp */,
 			);
 			path = Emu;
 			sourceTree = "<group>";
@@ -119,6 +124,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9FD8E9991B4266EF00AA5C04 /* main.cpp in Sources */,
+				9FD8E9A01B42698700AA5C04 /* emu.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
