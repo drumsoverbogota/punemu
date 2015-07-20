@@ -42,7 +42,8 @@ private:
     unsigned short PC;
     
     unsigned char substract8bit(unsigned char a,unsigned char b,unsigned char* f);
-    void inline WriteMemory(char address,char value);
+    unsigned char xor8bit(unsigned char a,unsigned char b,unsigned char* f);
+    void inline WriteMemory(unsigned short address, unsigned char value);
     
     
 public:

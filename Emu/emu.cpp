@@ -96,17 +96,27 @@ void emu::init(){
     
 }
 
-void emu::WriteMemory(char address,char value){
+void emu::WriteMemory(unsigned short address, unsigned char value){
     int a = address;
-    if ((a >= 0xe000 || a <= 0xfe00)){
-        ram[address] = value;
-        ram[address - 0x2000] = value;
-    }
-    if ((a >= 0xc000 || a <= 0xde00)){
-        ram[address] = value;
-        ram[address - 0x2000] = value;
-    }
+    
+    if (a >= 0xe000 && a <= 0xfdff)
+        a-= 0xe000;
+    else
+        a-= 0xc000;
+    
+    ram[a] = value;
+    std::cout<<"ADDRESS:"<<std::hex<<int(a)<<std::endl;
 }
+
+unsigned char emu::xor8bit(unsigned char a,unsigned char b,unsigned char* f){
+    unsigned char result = a ^ b;
+    if (result == 0x0)
+        *f &= 0x8F;
+    else
+        *f &= 0x0F;
+    return result;
+}
+
 
 unsigned char emu::substract8bit(unsigned char a,unsigned char b,unsigned char* f){
     
@@ -148,13 +158,13 @@ unsigned char emu::substract8bit(unsigned char a,unsigned char b,unsigned char* 
     else
         flag &= 0x7F; //set Z flag to 0
     *f = flag;
-    //std::cout<<"Result:"<<std::hex<<int(result)<<std::endl;
-    //std::cout<<"Flag:"<<std::hex<<int(flag)<<std::endl;
+    
     return result;
 }
 
 bool emu::emulateCycle(bool debug){
     
+    std::cout<<"PC:"<<int(PC)<<std::endl;
     opcode = rom[PC];
     
 
@@ -180,6 +190,15 @@ bool emu::emulateCycle(bool debug){
             R[B] = rom[PC + 1];
             PC += 2;
             break;
+
+        case 0x0D: //DEC C
+        {
+            if (debug)
+                std::cout<<"DEC C"<<std::endl;
+            R[C] = substract8bit(R[C], 0x1, &R[F]);
+            PC++;
+            break;
+        }
             
         case 0x0E: //LD C, d8
             if (debug)
@@ -188,14 +207,33 @@ bool emu::emulateCycle(bool debug){
             PC += 2;
             break;
 
+        case 0x15: //DEC D
+        {
+            if (debug)
+                std::cout<<"DEC D"<<std::endl;
+            R[D] = substract8bit(R[D], 0x1, &R[F]);
+            PC++;
+            break;
+        }
+            
+        case 0x1D: //DEC E
+        {
+            if (debug)
+                std::cout<<"DEC E"<<std::endl;
+            R[E] = substract8bit(R[E], 0x1, &R[F]);
+            PC++;
+            break;
+        }
+            
         case 0x1E: //LD E, d8
             if (debug)
                 std::cout<<"LD E, "<<std::hex<<int(rom[PC + 1])<<std::endl;
             R[E] = rom[PC + 1];
             PC += 2;
             break;
-            
-        case 0x1F: //RRA
+
+        //case 0x1F: //RRA
+        case 0xCB: //RRA
             if (debug)
                 std::cout<<"RRA"<<std::endl;
             std::cout<<"Rot "<<std::hex<<int(R[A])<<std::endl;
@@ -221,26 +259,54 @@ bool emu::emulateCycle(bool debug){
             PC += 3;
             break;
 
+        case 0x25: //DEC H
+        {
+            if (debug)
+                std::cout<<"DEC H"<<std::endl;
+            R[H] = substract8bit(R[H], 0x1, &R[F]);
+            PC++;
+            break;
+        }
+            
+        case 0x2D: //DEC L
+        {
+            if (debug)
+                std::cout<<"DEC L"<<std::endl;
+            R[L] = substract8bit(R[L], 0x1, &R[F]);
+            PC++;
+            break;
+        }
+            
         case 0x32: //LD (HL-),A
         {
             if (debug)
                 std::cout<<"LD (HL-),A"<<std::endl;
-            WriteMemory(R[H] << 8 | R[L], R[A]);
             unsigned short HL = R[H] << 8 | R[L];
+            std::cout<<"HL"<<std::hex<<int(HL)<<std::endl;
+            WriteMemory(R[H] << 8 | R[L], R[A]);
+
             HL -= 0x1;
             R[H] = (HL & 0xFF00)>>8;
             R[L] = HL & 0x00FF;
             PC++;
             break;
         }
+            
+        case 0x3D: //DEC A
+        {
+            if (debug)
+                std::cout<<"DEC A"<<std::endl;
+            R[A] = substract8bit(R[A], 0x1, &R[F]);
+            PC++;
+            break;
+        }
+            
         case 0xAF: //XOR A
             if (debug)
                 std::cout<<"XOR A"<<std::endl;
-            R[A] ^= R[A];
-            if (R[A] == 0x0)
-                R[F] &= 0x8F;
-            else
-                R[F] &= 0x0F;
+
+            R[A] ^= xor8bit(R[A], R[A], &R[F]) ;
+            
             PC++;
             break;
             
