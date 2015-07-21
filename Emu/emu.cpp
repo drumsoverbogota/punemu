@@ -121,14 +121,48 @@ unsigned char emu::xor8bit(unsigned char a,unsigned char b){
     return result;
 }
 
-
-unsigned char emu::substract8bit(unsigned char a,unsigned char b){
+unsigned char emu::addition8bit(unsigned char a,unsigned char b, unsigned int z){
     
-    unsigned int Z = 0;
+    unsigned int Z = z;
     unsigned char result = 0x0;
     
-    a = 0xaa;
-    b = 0xaa;
+    for (int i=0; i<8; i++) {
+        int X = (a & (1<<i)) != 0;
+        int Y = (b & (1<<i)) != 0;
+        
+        unsigned int d = X ^ Y ^ Z;
+        Z = (Z & (X ^ Y)) | (X & Y);
+        
+        if (i == 3){
+            if (Z == 1)
+                R[F] |= 0x20; //set H flag to 1
+            else
+                R[F] &= 0xDF; //set H flag to 0
+        }
+        if (i == 7){
+            if (Z == 1)
+                R[F] |= 0x10; //set C flag to 1
+            else
+                R[F] &= 0xEF; //set C flag to 0
+        }
+        
+        result = (result) | (d << i);
+    }
+    
+    R[F] &= 0xB0; //set N flag to 1
+    if (int(result)==0)
+        R[F] |= 0x80; //set Z flag to 1
+    else
+        R[F] &= 0x7F; //set Z flag to 0
+    
+    return result;
+}
+
+
+unsigned char emu::substract8bit(unsigned char a,unsigned char b, unsigned int z){
+    
+    unsigned int Z = z;
+    unsigned char result = 0x0;
     
     //std::cout<<"FLAG:"<<std::hex<<int(flag)<<std::endl;
     
@@ -168,12 +202,24 @@ unsigned char emu::substract8bit(unsigned char a,unsigned char b){
 void emu::r_rotation(unsigned char *r){
 
     unsigned char reg = *r;
+    
+    if( (reg & 0x01)> 0)  //si el último bit es 1 la bandera C queda en 1, si no en 0
+        R[F] |= 0x10;
+    else
+        R[F] &= 0xE0;
+     
     reg = reg>>1;
+    
+    if (reg==0)
+        R[F] |= 0x80; //set Z flag to 1
+    else
+        R[F] &= 0x7F; //set Z flag to 0
+    
     *r = reg;
     
-    std::cout<<"Rot "<<std::hex<<int(R[F])<<std::endl;
+
     R[F] &= 0x9F; // Poner N y H en 0
-    std::cout<<"Rot "<<std::hex<<int(R[F])<<std::endl;
+    //std::cout<<"Rot "<<std::hex<<int(R[F])<<std::endl;
     PC ++;
     
 }
@@ -192,11 +238,35 @@ bool emu::NOP(){
     return true;
 }
 
+bool emu::ADC_A_C(){
+    if (debug)
+        std::cout<<"ADC A,C "<<std::endl;
+    R[A] = addition8bit(R[A], R[C], (R[F]&0x10)>>4);
+    return false;
+}
+
+
 bool emu::DEC_B(){
     if (debug)
         std::cout<<"DEC B"<<std::endl;
-    R[B] = substract8bit(R[B], 0x1);
+    R[B] = substract8bit(R[B], 0x1,0);
     PC++;
+    return true;
+}
+
+bool emu::DEC_D(){
+    if (debug)
+        std::cout<<"DEC D"<<std::endl;
+    R[D] = substract8bit(R[D], 0x1,0);
+    PC++;
+    return true;
+}
+
+bool emu::LD_A_D(){
+    if (debug)
+        std::cout<<"LD A D "<<std::endl;
+    R[A] = R[D];
+    PC ++;
     return true;
 }
 
@@ -280,7 +350,7 @@ bool emu::RRA(){
     
     r_rotation(&R[A]);
     
-    return false;
+    return true;
 }
 
 
@@ -288,8 +358,11 @@ bool emu::RRA(){
 bool emu::emulateCycle(){
 
     //std::cout<<"PC:"<<int(PC)<<std::endl;
+    
     opcode = rom[PC];
     return (this->*table[opcode])();
+    
+
     
     /*
     switch (opcode) {

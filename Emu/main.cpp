@@ -17,8 +17,11 @@ int main(int argc, const char * argv[]) {
     emu c_emu(rom);
     c_emu.init(true);
     for (;;) {
-        if(!c_emu.emulateCycle())
+        if(!c_emu.emulateCycle()){
+            std::cout<<"Fin de la emulación";
             break;
+        }
+        
     }
     return 0;
 }

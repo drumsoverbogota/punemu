@@ -45,8 +45,9 @@ private:
     unsigned char opcode;
     unsigned short SP;
     unsigned short PC;
-    
-    unsigned char substract8bit(unsigned char a,unsigned char b);
+
+    unsigned char addition8bit(unsigned char a,unsigned char b,unsigned int z);
+    unsigned char substract8bit(unsigned char a,unsigned char b,unsigned int z);
     unsigned char xor8bit(unsigned char a,unsigned char b);
     void inline WriteMemory(unsigned short address, unsigned char value);
     void inline r_rotation(unsigned char* r);
@@ -58,6 +59,7 @@ private:
     bool NOP();         //0x00
     bool DEC_B();       //0x05
     bool LD_B_d8();     //0x06
+    bool DEC_D();       //0x0D
     bool LD_C_d8();     //0x0E
 
     bool LD_E_d8();     //0x1E
@@ -68,6 +70,10 @@ private:
     
     bool LDD_HL_A();    //0x32
     
+    bool LD_A_D();      //0x7A
+    
+    bool ADC_A_C();     //0x89
+    
     bool XOR_A();       //0xAF
     
     bool JP_a16();      //0xC3
@@ -77,7 +83,7 @@ private:
 
     bool (emu::*table[16*16])() = {
         //0x0X
-        &emu::NOP, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::DEC_B, &emu::LD_B_d8, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::LD_C_d8, &emu::cpuNULL,
+        &emu::NOP, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::DEC_B, &emu::LD_B_d8, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::DEC_D, &emu::LD_C_d8, &emu::cpuNULL,
         
         //0x1X
         &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::LD_E_d8, &emu::RRA,
@@ -98,10 +104,10 @@ private:
         &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
         
         //0x7X
-        &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
+        &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::LD_A_D, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
         
         //0x8X
-        &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
+        &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::ADC_A_C, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
         
         //0x9X
         &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
