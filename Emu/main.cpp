@@ -15,9 +15,9 @@ int main(int argc, const char * argv[]) {
     std::string rom = argv[2];
 
     emu c_emu(rom);
-    c_emu.init();
+    c_emu.init(true);
     for (;;) {
-        if(!c_emu.emulateCycle(true))
+        if(!c_emu.emulateCycle())
             break;
     }
     return 0;

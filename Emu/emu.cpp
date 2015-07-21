@@ -72,7 +72,11 @@ emu::emu(std::string file){
 }
 
 
-void emu::init(){
+void emu::init(bool debug){
+    
+    this->debug = debug;
+    
+    
     PC = 0x100;
     SP = 0xFFFE;
     opcode = 0x0;
@@ -105,24 +109,23 @@ void emu::WriteMemory(unsigned short address, unsigned char value){
         a-= 0xc000;
     
     ram[a] = value;
-    std::cout<<"ADDRESS:"<<std::hex<<int(a)<<std::endl;
+    //std::cout<<"ADDRESS:"<<std::hex<<int(a)<<std::endl;
 }
 
-unsigned char emu::xor8bit(unsigned char a,unsigned char b,unsigned char* f){
+unsigned char emu::xor8bit(unsigned char a,unsigned char b){
     unsigned char result = a ^ b;
     if (result == 0x0)
-        *f &= 0x8F;
+        R[F] &= 0x8F;
     else
-        *f &= 0x0F;
+        R[F] &= 0x0F;
     return result;
 }
 
 
-unsigned char emu::substract8bit(unsigned char a,unsigned char b,unsigned char* f){
+unsigned char emu::substract8bit(unsigned char a,unsigned char b){
     
     unsigned int Z = 0;
     unsigned char result = 0x0;
-    unsigned char flag = *f;
     
     a = 0xaa;
     b = 0xaa;
@@ -138,184 +141,159 @@ unsigned char emu::substract8bit(unsigned char a,unsigned char b,unsigned char* 
         
         if (i == 3){
             if (Z == 1)
-                flag |= 0x20; //set H flag to 1
+                R[F] |= 0x20; //set H flag to 1
             else
-                flag &= 0xDF; //set H flag to 0
+                R[F] &= 0xDF; //set H flag to 0
         }
         if (i == 7){
             if (Z == 1)
-                flag |= 0x10; //set C flag to 1
+                R[F] |= 0x10; //set C flag to 1
             else
-                flag &= 0xEF; //set C flag to 0
+                R[F] &= 0xEF; //set C flag to 0
         }
     
         result = (result) | (d << i);
     }
     
-    flag |= 0x40; //set N flag to 1
+    R[F] |= 0x40; //set N flag to 1
     if (int(result)==0)
-        flag |= 0x80; //set Z flag to 1
+        R[F] |= 0x80; //set Z flag to 1
     else
-        flag &= 0x7F; //set Z flag to 0
-    *f = flag;
+        R[F] &= 0x7F; //set Z flag to 0
     
     return result;
 }
 
-bool emu::emulateCycle(bool debug){
+
+void emu::r_rotation(unsigned char *r){
+
+    unsigned char reg = *r;
+    reg = reg>>1;
+    *r = reg;
     
-    std::cout<<"PC:"<<int(PC)<<std::endl;
+    std::cout<<"Rot "<<std::hex<<int(R[F])<<std::endl;
+    R[F] &= 0x9F; // Poner N y H en 0
+    std::cout<<"Rot "<<std::hex<<int(R[F])<<std::endl;
+    PC ++;
+    
+}
+
+////////////////////////OPCODES////////////////////////
+
+bool emu::cpuNULL(){
+    std::cout<<"operación no implementada : "<<std::hex<<int(opcode)<<std::endl;
+    return false;
+}
+
+bool emu::NOP(){
+    if (debug)
+        std::cout<<"NOP"<<std::endl;
+    PC++;
+    return true;
+}
+
+bool emu::DEC_B(){
+    if (debug)
+        std::cout<<"DEC B"<<std::endl;
+    R[B] = substract8bit(R[B], 0x1);
+    PC++;
+    return true;
+}
+
+
+bool emu::LD_B_d8(){
+    if (debug)
+        std::cout<<"LD B, "<<std::hex<<int(rom[PC + 1])<<std::endl;
+    R[B] = rom[PC + 1];
+    PC += 2;
+    return true;
+}
+
+bool emu::LD_C_d8(){
+    if (debug)
+        std::cout<<"LD C, "<<std::hex<<int(rom[PC + 1])<<std::endl;
+    R[C] = rom[PC + 1];
+    PC += 2;
+    return true;
+}
+
+bool emu::LD_E_d8(){
+    if (debug)
+        std::cout<<"LD E, "<<std::hex<<int(rom[PC + 1])<<std::endl;
+    R[E] = rom[PC + 1];
+    PC += 2;
+    return true;
+}
+
+
+bool emu::LD_HL_d16(){
+    if (debug)
+        std::cout<<"LD HL, "<<std::hex<<int(rom[PC + 2] << 8 |  rom[PC + 1])<<std::endl;
+    R[H] = rom[PC + 2];
+    R[L] = rom[PC + 1];
+    PC += 3;
+    return true;
+}
+
+bool emu::LDD_HL_A(){
+    if (debug)
+        std::cout<<"LD (HL-),A"<<std::endl;
+    unsigned short HL = R[H] << 8 | R[L];
+
+    WriteMemory(R[H] << 8 | R[L], R[A]);
+    
+    HL -= 0x1;
+    R[H] = (HL & 0xFF00)>>8;
+    R[L] = HL & 0x00FF;
+    PC++;
+    return true;
+}
+
+bool emu::XOR_A(){
+    if (debug)
+        std::cout<<"XOR A"<<std::endl;
+    R[A] ^= xor8bit(R[A], R[A]);
+    PC++;
+    return true;
+}
+
+bool emu::JP_a16(){
+    if (debug)
+        std::cout<<"JP "<<std::hex<<int(rom[PC + 2] << 8 |  rom[PC + 1])<<std::endl;
+    PC = rom[PC + 2] << 8 |  rom[PC + 1];
+    return true;
+}
+
+bool emu::JR_NZ_r8(){
+    if (debug)
+        std::cout<<"JR NZ "<<std::hex<<int(rom[PC + 1])<<std::endl;
+    if ((R[F] & 0x80) == 0x80)
+        PC += rom[PC + 1];
+    else
+        PC += 2;
+    return true;
+}
+
+bool emu::RRA(){
+    if (debug)
+        std::cout<<"RRA"<<std::endl;
+    
+    r_rotation(&R[A]);
+    
+    return false;
+}
+
+
+
+bool emu::emulateCycle(){
+
+    //std::cout<<"PC:"<<int(PC)<<std::endl;
     opcode = rom[PC];
+    return (this->*table[opcode])();
     
-
+    /*
     switch (opcode) {
-
-        case 0x00: //NOP
-            if (debug)
-                std::cout<<"NOP"<<std::endl;
-            PC++;
-            break;
-
-        case 0x05: //DEC B
-        {
-            if (debug)
-                std::cout<<"DEC B"<<std::endl;
-            R[B] = substract8bit(R[B], 0x1, &R[F]);
-            PC++;
-            break;
-        }
-        case 0x06: //LD B, d8
-            if (debug)
-                std::cout<<"LD B, "<<std::hex<<int(rom[PC + 1])<<std::endl;
-            R[B] = rom[PC + 1];
-            PC += 2;
-            break;
-
-        case 0x0D: //DEC C
-        {
-            if (debug)
-                std::cout<<"DEC C"<<std::endl;
-            R[C] = substract8bit(R[C], 0x1, &R[F]);
-            PC++;
-            break;
-        }
-            
-        case 0x0E: //LD C, d8
-            if (debug)
-                std::cout<<"LD C, "<<std::hex<<int(rom[PC + 1])<<std::endl;
-            R[C] = rom[PC + 1];
-            PC += 2;
-            break;
-
-        case 0x15: //DEC D
-        {
-            if (debug)
-                std::cout<<"DEC D"<<std::endl;
-            R[D] = substract8bit(R[D], 0x1, &R[F]);
-            PC++;
-            break;
-        }
-            
-        case 0x1D: //DEC E
-        {
-            if (debug)
-                std::cout<<"DEC E"<<std::endl;
-            R[E] = substract8bit(R[E], 0x1, &R[F]);
-            PC++;
-            break;
-        }
-            
-        case 0x1E: //LD E, d8
-            if (debug)
-                std::cout<<"LD E, "<<std::hex<<int(rom[PC + 1])<<std::endl;
-            R[E] = rom[PC + 1];
-            PC += 2;
-            break;
-
-        //case 0x1F: //RRA
-        case 0xCB: //RRA
-            if (debug)
-                std::cout<<"RRA"<<std::endl;
-            std::cout<<"Rot "<<std::hex<<int(R[A])<<std::endl;
-            R[A] = R[A]>>1;
-            std::cout<<"Rot "<<std::hex<<int(R[A])<<std::endl;
-            PC ++;
-            break;
-            
-        case 0x20: //JR cc,e
-            if (debug)
-                std::cout<<"JR NZ"<<std::hex<<int(rom[PC + 1])<<std::endl;
-            if ((R[F] & 0x80) == 0x80)
-                PC += rom[PC + 1];
-            else
-                PC += 2;
-            break;
-            
-        case 0x21: //LD HL, d16
-            if (debug)
-                std::cout<<"LD HL, "<<std::hex<<int(rom[PC + 2] << 8 |  rom[PC + 1])<<std::endl;
-            R[H] = rom[PC + 2];
-            R[L] = rom[PC + 1];
-            PC += 3;
-            break;
-
-        case 0x25: //DEC H
-        {
-            if (debug)
-                std::cout<<"DEC H"<<std::endl;
-            R[H] = substract8bit(R[H], 0x1, &R[F]);
-            PC++;
-            break;
-        }
-            
-        case 0x2D: //DEC L
-        {
-            if (debug)
-                std::cout<<"DEC L"<<std::endl;
-            R[L] = substract8bit(R[L], 0x1, &R[F]);
-            PC++;
-            break;
-        }
-            
-        case 0x32: //LD (HL-),A
-        {
-            if (debug)
-                std::cout<<"LD (HL-),A"<<std::endl;
-            unsigned short HL = R[H] << 8 | R[L];
-            std::cout<<"HL"<<std::hex<<int(HL)<<std::endl;
-            WriteMemory(R[H] << 8 | R[L], R[A]);
-
-            HL -= 0x1;
-            R[H] = (HL & 0xFF00)>>8;
-            R[L] = HL & 0x00FF;
-            PC++;
-            break;
-        }
-            
-        case 0x3D: //DEC A
-        {
-            if (debug)
-                std::cout<<"DEC A"<<std::endl;
-            R[A] = substract8bit(R[A], 0x1, &R[F]);
-            PC++;
-            break;
-        }
-            
-        case 0xAF: //XOR A
-            if (debug)
-                std::cout<<"XOR A"<<std::endl;
-
-            R[A] ^= xor8bit(R[A], R[A], &R[F]) ;
-            
-            PC++;
-            break;
-            
-        case 0xC3: //JP a16
-            if (debug)
-                std::cout<<"JP "<<std::hex<<int(rom[PC + 2] << 8 |  rom[PC + 1])<<std::endl;
-            PC = rom[PC + 2] << 8 |  rom[PC + 1];
-            break;
-            
+     
         case 0xEE: //XOR d8
             if (debug)
                 std::cout<<"XOR "<<std::hex<<int(rom[PC + 1])<<std::endl;
@@ -346,7 +324,7 @@ bool emu::emulateCycle(bool debug){
             std::cout<<"Unknown OPCODE:"<<std::hex<<int(opcode)<<std::endl;
             return false;
             break;
-    }
+    }*/
     //std::cout<<"OPCODE:"<<std::hex<<int(opcode)<<std::endl;
     //std::cout<<"PC:"<<std::hex<<int(PC)<<std::endl;
     return true;
