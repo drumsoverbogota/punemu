@@ -21,7 +21,6 @@ int main(int argc, const char * argv[]) {
             std::cout<<"Fin de la emulación";
             break;
         }
-        
     }
     return 0;
 }

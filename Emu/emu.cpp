@@ -103,13 +103,43 @@ void emu::init(bool debug){
 void emu::WriteMemory(unsigned short address, unsigned char value){
     int a = address;
     
-    if (a >= 0xe000 && a <= 0xfdff)
-        a-= 0xe000;
-    else
-        a-= 0xc000;
     
-    ram[a] = value;
-    //std::cout<<"ADDRESS:"<<std::hex<<int(a)<<std::endl;
+    if (a >= 0xe000 && a <= 0xfdff)
+        ram[a-0xe000] = value;
+    else if (a >= 0xc000 && a <= 0xdfff)
+        ram[a-0xc000] = value;
+    else if (a >= 0xFF00 && a <= 0xFF7F)
+        IO[a-0xFF00] = value;
+    else if (a >= 0x2000 && a <= 0x3FFF) //ROM bank number
+        rombank = value;
+    else if (a >= 0xFF80 && a <= 0xFFFE) //HRAM
+        hram[a-0xFF80] = value;
+    else if (a == 0xFFFF) //IE
+        IE = value;
+    else
+        std::cout<<"ERROR: CAN'T WRITE ADDRESS:"<<std::hex<<int(a)<<std::endl;
+
+}
+
+unsigned char emu::ReadMemory(unsigned short address){
+ 
+    int a = address;
+    
+    if (a >= 0xe000 && a <= 0xfdff)
+        return ram[a-0xe000];
+    else if (a >= 0xc000 && a <= 0xdfff)
+        return ram[a-0xc000];
+    else if (a >= 0xFF00 && a <= 0xFF7F)
+        return IO[a-0xFF00];
+    else if (a >= 0xFF80 && a <= 0xFFFE) //HRAM
+        return hram[a-0xFF80];
+    else if (a == 0xFFFF) //HRAM
+        return IE;
+    else{
+        std::cout<<"ERROR: CAN'T READ ADDRESS:"<<std::hex<<int(a)<<std::endl;
+        return 0x00;
+    }
+    
 }
 
 unsigned char emu::xor8bit(unsigned char a,unsigned char b){
@@ -226,47 +256,25 @@ void emu::r_rotation(unsigned char *r){
 
 ////////////////////////OPCODES////////////////////////
 
-bool emu::cpuNULL(){
-    std::cout<<"operación no implementada : "<<std::hex<<int(opcode)<<std::endl;
-    return false;
-}
-
-bool emu::NOP(){
-    if (debug)
-        std::cout<<"NOP"<<std::endl;
-    PC++;
-    return true;
-}
-
-bool emu::ADC_A_C(){
-    if (debug)
-        std::cout<<"ADC A,C "<<std::endl;
-    R[A] = addition8bit(R[A], R[C], (R[F]&0x10)>>4);
-    return false;
-}
 
 
-bool emu::DEC_B(){
-    if (debug)
-        std::cout<<"DEC B"<<std::endl;
-    R[B] = substract8bit(R[B], 0x1,0);
-    PC++;
-    return true;
-}
 
-bool emu::DEC_D(){
-    if (debug)
-        std::cout<<"DEC D"<<std::endl;
-    R[D] = substract8bit(R[D], 0x1,0);
-    PC++;
-    return true;
-}
+//+++++++++++++++++++++++++++8-bit loads +++++++++++++++++++++++++++//
 
 bool emu::LD_A_D(){
     if (debug)
         std::cout<<"LD A D "<<std::endl;
     R[A] = R[D];
     PC ++;
+    return true;
+}
+
+
+bool emu::LD_A_d8(){
+    if (debug)
+        std::cout<<"LD A, "<<std::hex<<int(rom[PC + 1])<<std::endl;
+    R[A] = rom[PC + 1];
+    PC += 2;
     return true;
 }
 
@@ -296,20 +304,32 @@ bool emu::LD_E_d8(){
 }
 
 
-bool emu::LD_HL_d16(){
+bool emu::LD_pHL_d8(){
     if (debug)
-        std::cout<<"LD HL, "<<std::hex<<int(rom[PC + 2] << 8 |  rom[PC + 1])<<std::endl;
-    R[H] = rom[PC + 2];
-    R[L] = rom[PC + 1];
-    PC += 3;
+        std::cout<<"LD (HL),"<<std::hex<<int(rom[PC + 1])<<std::endl;
+    WriteMemory(R[H] << 8 | R[L], rom[PC+1]);
+    PC += 2;
     return true;
 }
 
-bool emu::LDD_HL_A(){
+bool emu::LD_pa16_A(){
+    if (debug)
+        std::cout<<"LD ("<<std::hex<<int(rom[PC + 2] << 8 |  rom[PC + 1])<<"),A"<<std::endl;
+    
+    unsigned short a16 = rom[PC + 2] << 8 |  rom[PC + 1];
+    WriteMemory(a16, R[A]);
+    
+    PC+=3;
+    return true;
+}
+
+
+
+bool emu::LDD_pHL_A(){
     if (debug)
         std::cout<<"LD (HL-),A"<<std::endl;
     unsigned short HL = R[H] << 8 | R[L];
-
+    
     WriteMemory(R[H] << 8 | R[L], R[A]);
     
     HL -= 0x1;
@@ -319,6 +339,45 @@ bool emu::LDD_HL_A(){
     return true;
 }
 
+bool emu::LDH_pa8_A(){
+    if (debug)
+        std::cout<<"LDH ("<<std::hex<<int(rom[PC + 1])<<"),A"<<std::endl;
+    
+    WriteMemory(0xFF00+rom[PC + 1], R[A]);
+    
+    PC+=2;
+    return true;
+}
+
+bool emu::LDH_A_pa8(){
+    if (debug)
+        std::cout<<"LDH A,("<<std::hex<<int(rom[PC + 1])<<")"<<std::endl;
+    
+    R[A] = ReadMemory(0xFF00+ rom[PC + 1]);
+    PC+=2;
+    return true;
+}
+
+//+++++++++++++++++++++++++++16-bit loads +++++++++++++++++++++++++++//
+
+bool emu::LD_HL_d16(){
+    if (debug)
+        std::cout<<"LD HL, "<<std::hex<<int(rom[PC + 2] << 8 |  rom[PC + 1])<<std::endl;
+    R[H] = rom[PC + 2];
+    R[L] = rom[PC + 1];
+    PC += 3;
+    return true;
+}
+
+//+++++++++++++++++++++++++++8-bit ALU +++++++++++++++++++++++++++//
+
+bool emu::ADC_A_C(){
+    if (debug)
+        std::cout<<"ADC A,C "<<std::endl;
+    R[A] = addition8bit(R[A], R[C], (R[F]&0x10)>>4);
+    return false;
+}
+
 bool emu::XOR_A(){
     if (debug)
         std::cout<<"XOR A"<<std::endl;
@@ -326,6 +385,67 @@ bool emu::XOR_A(){
     PC++;
     return true;
 }
+
+bool emu::CP_d8(){
+    if (debug)
+        std::cout<<"CP "<<std::hex<<int(rom[PC + 1])<<std::endl;
+    substract8bit(R[A], rom[PC+1], 0);
+    PC+=2;
+    return true;
+}
+
+bool emu::DEC_B(){
+    if (debug)
+        std::cout<<"DEC B"<<std::endl;
+    R[B] = substract8bit(R[B], 0x1,0);
+    PC++;
+    return true;
+}
+
+bool emu::DEC_D(){
+    if (debug)
+        std::cout<<"DEC D"<<std::endl;
+    R[D] = substract8bit(R[D], 0x1,0);
+    PC++;
+    return true;
+}
+
+//+++++++++++++++++++++++++++16-bit Arithmetic +++++++++++++++++++++++++++//
+
+//+++++++++++++++++++++++++++Miscellaneous +++++++++++++++++++++++++++//
+
+
+bool emu::NOP(){
+    if (debug)
+        std::cout<<"NOP"<<std::endl;
+    PC++;
+    return true;
+}
+
+bool emu::DI(){
+    if (debug)
+        std::cout<<"DI"<<std::endl;
+    std::cout<<"TODO"<<std::endl;
+    PC++;
+    return true;
+}
+
+//+++++++++++++++++++++++++++Rotates & Shifts +++++++++++++++++++++++++++//
+
+bool emu::RRA(){
+    if (debug)
+        std::cout<<"RRA"<<std::endl;
+    
+    r_rotation(&R[A]);
+    
+    return true;
+}
+
+
+//+++++++++++++++++++++++++++Bit Opcodes +++++++++++++++++++++++++++//
+
+//+++++++++++++++++++++++++++Jumps +++++++++++++++++++++++++++//
+
 
 bool emu::JP_a16(){
     if (debug)
@@ -344,15 +464,16 @@ bool emu::JR_NZ_r8(){
     return true;
 }
 
-bool emu::RRA(){
-    if (debug)
-        std::cout<<"RRA"<<std::endl;
-    
-    r_rotation(&R[A]);
-    
-    return true;
-}
+//+++++++++++++++++++++++++++Calls +++++++++++++++++++++++++++//
 
+//+++++++++++++++++++++++++++Restarts +++++++++++++++++++++++++++//
+
+//+++++++++++++++++++++++++++Returns +++++++++++++++++++++++++++//
+
+bool emu::cpuNULL(){
+    std::cout<<"operación no implementada : "<<std::hex<<int(opcode)<<std::endl;
+    return false;
+}
 
 
 bool emu::emulateCycle(){

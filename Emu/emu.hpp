@@ -40,7 +40,11 @@ private:
     unsigned char * rom;
     
     unsigned char ram[8192];
-    unsigned char vram  [8192];
+    unsigned char vram[8192];
+    unsigned char hram[127];
+    unsigned char IO[128];
+    unsigned char IE;
+    unsigned char rombank;
     unsigned char R[8];
     unsigned char opcode;
     unsigned short SP;
@@ -49,8 +53,11 @@ private:
     unsigned char addition8bit(unsigned char a,unsigned char b,unsigned int z);
     unsigned char substract8bit(unsigned char a,unsigned char b,unsigned int z);
     unsigned char xor8bit(unsigned char a,unsigned char b);
-    void inline WriteMemory(unsigned short address, unsigned char value);
     void inline r_rotation(unsigned char* r);
+    
+    unsigned char inline ReadMemory(unsigned short address);
+    void inline WriteMemory(unsigned short address, unsigned char value);
+
     
     bool cpuNULL();
     
@@ -68,7 +75,9 @@ private:
     bool JR_NZ_r8();    //0x20
     bool LD_HL_d16();   //0x21
     
-    bool LDD_HL_A();    //0x32
+    bool LDD_pHL_A();   //0x32
+    bool LD_pHL_d8();   //0x36
+    bool LD_A_d8();     //0x3E
     
     bool LD_A_D();      //0x7A
     
@@ -77,6 +86,13 @@ private:
     bool XOR_A();       //0xAF
     
     bool JP_a16();      //0xC3
+    
+    bool LDH_pa8_A();   //0xE0
+    bool LD_pa16_A();   //0xEA
+    
+    bool LDH_A_pa8();   //0xF0
+    bool DI();          //0xF3
+    bool CP_d8();       //0xFE
 
     
     
@@ -92,7 +108,7 @@ private:
         &emu::JR_NZ_r8, &emu::LD_HL_d16, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
         
         //0x3X
-        &emu::cpuNULL, &emu::cpuNULL, &emu::LDD_HL_A, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
+        &emu::cpuNULL, &emu::cpuNULL, &emu::LDD_pHL_A, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::LD_pHL_d8, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::LD_A_d8, &emu::cpuNULL,
         
         //0x4X
         &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
@@ -125,10 +141,10 @@ private:
         &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
         
         //0xEX
-        &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
+        &emu::LDH_pa8_A, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::LD_pa16_A, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
         
         //0xFX
-        &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
+        &emu::LDH_A_pa8, &emu::cpuNULL, &emu::cpuNULL, &emu::DI, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::CP_d8, &emu::cpuNULL,
         
         
     };
