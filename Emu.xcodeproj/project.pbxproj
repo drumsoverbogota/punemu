@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		9FD8E9991B4266EF00AA5C04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8E9981B4266EF00AA5C04 /* main.cpp */; };
 		9FD8E9A01B42698700AA5C04 /* emu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8E99F1B42698600AA5C04 /* emu.cpp */; };
+		9FEABC261B68136D00456D4C /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9FEABC251B68136C00456D4C /* SDL2.framework */; };
+		9FEABC281B68330500456D4C /* SDL2_ttf.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9FEABC271B68330500456D4C /* SDL2_ttf.framework */; };
+		9FEABC2A1B68342600456D4C /* SDL2_image.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9FEABC291B68342600456D4C /* SDL2_image.framework */; };
 		9FEB71231B5B48C600F3A821 /* readme.md in Sources */ = {isa = PBXBuildFile; fileRef = 9FEB71221B5B48C600F3A821 /* readme.md */; };
 /* End PBXBuildFile section */
 
@@ -29,6 +32,9 @@
 		9FD8E9981B4266EF00AA5C04 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		9FD8E99F1B42698600AA5C04 /* emu.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = emu.cpp; sourceTree = "<group>"; };
 		9FD8E9A11B42699400AA5C04 /* emu.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = emu.hpp; sourceTree = "<group>"; };
+		9FEABC251B68136C00456D4C /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2.framework; path = ../../../../../Library/Frameworks/SDL2.framework; sourceTree = "<group>"; };
+		9FEABC271B68330500456D4C /* SDL2_ttf.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2_ttf.framework; path = ../../../../../Library/Frameworks/SDL2_ttf.framework; sourceTree = "<group>"; };
+		9FEABC291B68342600456D4C /* SDL2_image.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2_image.framework; path = ../../../../../Library/Frameworks/SDL2_image.framework; sourceTree = "<group>"; };
 		9FEB71221B5B48C600F3A821 /* readme.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = readme.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -37,6 +43,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9FEABC2A1B68342600456D4C /* SDL2_image.framework in Frameworks */,
+				9FEABC281B68330500456D4C /* SDL2_ttf.framework in Frameworks */,
+				9FEABC261B68136D00456D4C /* SDL2.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -46,6 +55,9 @@
 		9FD8E98C1B4266EF00AA5C04 = {
 			isa = PBXGroup;
 			children = (
+				9FEABC291B68342600456D4C /* SDL2_image.framework */,
+				9FEABC271B68330500456D4C /* SDL2_ttf.framework */,
+				9FEABC251B68136C00456D4C /* SDL2.framework */,
 				9FEB71221B5B48C600F3A821 /* readme.md */,
 				9FD8E9971B4266EF00AA5C04 /* Emu */,
 				9FD8E9961B4266EF00AA5C04 /* Products */,
@@ -212,6 +224,10 @@
 		9FD8E99D1B4266EF00AA5C04 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(LOCAL_LIBRARY_DIR)/Frameworks",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -219,6 +235,10 @@
 		9FD8E99E1B4266EF00AA5C04 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(LOCAL_LIBRARY_DIR)/Frameworks",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

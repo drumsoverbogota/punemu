@@ -104,17 +104,19 @@ void emu::WriteMemory(unsigned short address, unsigned char value){
     int a = address;
     
     
-    if (a >= 0xe000 && a <= 0xfdff)
+    if (a >= 0xe000 && a <= 0xfdff)      // RAM echo
         ram[a-0xe000] = value;
-    else if (a >= 0xc000 && a <= 0xdfff)
+    else if (a >= 0xc000 && a <= 0xdfff) // RAM
         ram[a-0xc000] = value;
-    else if (a >= 0xFF00 && a <= 0xFF7F)
+    else if (a >= 0x8000 && a <= 0x9fff) // VRAM
+        vram[a-0x8000] = value;
+    else if (a >= 0xFF00 && a <= 0xFF7F) // IO
         IO[a-0xFF00] = value;
-    else if (a >= 0x2000 && a <= 0x3FFF) //ROM bank number
+    else if (a >= 0x2000 && a <= 0x3FFF) // ROM bank number
         rombank = value;
-    else if (a >= 0xFF80 && a <= 0xFFFE) //HRAM
+    else if (a >= 0xFF80 && a <= 0xFFFE) // HRAM
         hram[a-0xFF80] = value;
-    else if (a == 0xFFFF) //IE
+    else if (a == 0xFFFF)                //IE
         IE = value;
     else
         std::cout<<"ERROR: CAN'T WRITE ADDRESS:"<<std::hex<<int(a)<<std::endl;
@@ -125,15 +127,20 @@ unsigned char emu::ReadMemory(unsigned short address){
  
     int a = address;
     
+    
     if (a >= 0xe000 && a <= 0xfdff)
         return ram[a-0xe000];
-    else if (a >= 0xc000 && a <= 0xdfff)
+    else if (a >= 0xc000 && a <= 0xdfff) //ECHO
         return ram[a-0xc000];
-    else if (a >= 0xFF00 && a <= 0xFF7F)
+    else if (a >= 0x8000 && a <= 0x9fff) //VRAM
+        return vram[a-0x8000];
+    else if (a >= 0xFF00 && a <= 0xFF7F) //IO
         return IO[a-0xFF00];
     else if (a >= 0xFF80 && a <= 0xFFFE) //HRAM
         return hram[a-0xFF80];
-    else if (a == 0xFFFF) //HRAM
+    else if (a >= 0x0000 && a <= 0x7FFF) //ROM
+        return rom[a];
+    else if (a == 0xFFFF)                //IE
         return IE;
     else{
         std::cout<<"ERROR: CAN'T READ ADDRESS:"<<std::hex<<int(a)<<std::endl;
@@ -141,6 +148,16 @@ unsigned char emu::ReadMemory(unsigned short address){
     }
     
 }
+
+unsigned char emu::or8bit(unsigned char a,unsigned char b){
+    unsigned char result = a | b;
+    if (result == 0x0)
+        R[F] &= 0x8F;
+    else
+        R[F] &= 0x0F;
+    return result;
+}
+
 
 unsigned char emu::xor8bit(unsigned char a,unsigned char b){
     unsigned char result = a ^ b;
@@ -261,6 +278,14 @@ void emu::r_rotation(unsigned char *r){
 
 //+++++++++++++++++++++++++++8-bit loads +++++++++++++++++++++++++++//
 
+bool emu::LD_A_B(){
+    if (debug)
+        std::cout<<"LD A B"<<std::endl;
+    R[A] = R[B];
+    PC ++;
+    return true;
+}
+
 bool emu::LD_A_D(){
     if (debug)
         std::cout<<"LD A D "<<std::endl;
@@ -324,15 +349,38 @@ bool emu::LD_pa16_A(){
 }
 
 
+bool emu::LD_pC_A(){
+    if (debug)
+        std::cout<<"LD (C),A"<<std::endl;
+    
+    WriteMemory(0xFF00+R[C], R[A]);
+    
+    PC+=2;
+    return true;
+}
 
 bool emu::LDD_pHL_A(){
     if (debug)
         std::cout<<"LD (HL-),A"<<std::endl;
     unsigned short HL = R[H] << 8 | R[L];
     
-    WriteMemory(R[H] << 8 | R[L], R[A]);
+    WriteMemory(HL, R[A]);
     
     HL -= 0x1;
+    R[H] = (HL & 0xFF00)>>8;
+    R[L] = HL & 0x00FF;
+    PC++;
+    return true;
+}
+
+bool emu::LDI_A_pHL(){
+    if (debug)
+        std::cout<<"LD A,(HL+)"<<std::endl;
+    unsigned short HL = R[H] << 8 | R[L];
+    
+    R[A] = ReadMemory(HL);
+    
+    HL += 0x1;
     R[H] = (HL & 0xFF00)>>8;
     R[L] = HL & 0x00FF;
     PC++;
@@ -360,11 +408,28 @@ bool emu::LDH_A_pa8(){
 
 //+++++++++++++++++++++++++++16-bit loads +++++++++++++++++++++++++++//
 
+bool emu::LD_BC_d16(){
+    if (debug)
+        std::cout<<"LD BC, "<<std::hex<<int(rom[PC + 2] << 8 |  rom[PC + 1])<<std::endl;
+    R[B] = rom[PC + 2];
+    R[C] = rom[PC + 1];
+    PC += 3;
+    return true;
+}
+
 bool emu::LD_HL_d16(){
     if (debug)
         std::cout<<"LD HL, "<<std::hex<<int(rom[PC + 2] << 8 |  rom[PC + 1])<<std::endl;
     R[H] = rom[PC + 2];
     R[L] = rom[PC + 1];
+    PC += 3;
+    return true;
+}
+
+bool emu::LD_SP_d16(){
+    if (debug)
+        std::cout<<"LD SP, "<<std::hex<<int(rom[PC + 2] << 8 |  rom[PC + 1])<<std::endl;
+    SP = rom[PC + 2] << 8 |  rom[PC + 1];
     PC += 3;
     return true;
 }
@@ -375,13 +440,23 @@ bool emu::ADC_A_C(){
     if (debug)
         std::cout<<"ADC A,C "<<std::endl;
     R[A] = addition8bit(R[A], R[C], (R[F]&0x10)>>4);
-    return false;
+    PC++;
+    return true;
+}
+
+
+bool emu::OR_C(){
+    if (debug)
+        std::cout<<"OR C"<<std::endl;
+    R[A] = or8bit(R[A], R[C]);
+    PC++;
+    return true;
 }
 
 bool emu::XOR_A(){
     if (debug)
         std::cout<<"XOR A"<<std::endl;
-    R[A] ^= xor8bit(R[A], R[A]);
+    R[A] = xor8bit(R[A], R[A]);
     PC++;
     return true;
 }
@@ -402,6 +477,14 @@ bool emu::DEC_B(){
     return true;
 }
 
+bool emu::DEC_C(){
+    if (debug)
+        std::cout<<"DEC C"<<std::endl;
+    R[C] = substract8bit(R[C], 0x1,0);
+    PC++;
+    return true;
+}
+
 bool emu::DEC_D(){
     if (debug)
         std::cout<<"DEC D"<<std::endl;
@@ -411,6 +494,21 @@ bool emu::DEC_D(){
 }
 
 //+++++++++++++++++++++++++++16-bit Arithmetic +++++++++++++++++++++++++++//
+
+bool emu::DEC_BC(){
+    
+    if (debug)
+        std::cout<<"DEC BC"<<std::endl;
+    
+    unsigned short BC = R[B] << 8 | R[C];
+    
+    BC -= 0x1;
+    
+    R[B] = (BC & 0xFF00)>>8;
+    R[C] = BC & 0x00FF;
+    PC++;
+    return true;
+}
 
 //+++++++++++++++++++++++++++Miscellaneous +++++++++++++++++++++++++++//
 
@@ -454,24 +552,57 @@ bool emu::JP_a16(){
     return true;
 }
 
+bool emu::JP_pHL(){
+    if (debug)
+        std::cout<<"JP (HL)"<<std::endl;
+    PC = R[H] << 8 | R[L];
+    return true;
+}
+
 bool emu::JR_NZ_r8(){
     if (debug)
         std::cout<<"JR NZ "<<std::hex<<int(rom[PC + 1])<<std::endl;
-    if ((R[F] & 0x80) == 0x80)
-        PC += rom[PC + 1];
-    else
-        PC += 2;
+    signed char add = rom[PC + 1];
+    PC += 2;
+    if ((R[F] & 0x80) == 0x00)
+        PC += add;
     return true;
 }
 
 //+++++++++++++++++++++++++++Calls +++++++++++++++++++++++++++//
 
+bool emu::CALL_a16(){
+    if (debug)
+        std::cout<<"CALL "<<int(rom[PC + 2] << 8 |  rom[PC + 1])<<std::endl;
+    WriteMemory(SP-1, (PC & 0xFF00)>>8);
+    WriteMemory(SP-2, PC & 0x00FF);
+
+    PC = rom[PC + 2] << 8 |  rom[PC + 1];
+    SP -= 2;
+
+    return true;
+}
+
 //+++++++++++++++++++++++++++Restarts +++++++++++++++++++++++++++//
 
 //+++++++++++++++++++++++++++Returns +++++++++++++++++++++++++++//
 
+bool emu::RET(){
+    
+    if (debug)
+        std::cout<<"RET"<<std::endl;
+    PC = 0;
+    PC |= ReadMemory(SP)+1;
+    PC |= ReadMemory(SP+1)<<8;
+
+    SP += 2;
+    return true;
+}
+
+
 bool emu::cpuNULL(){
-    std::cout<<"operación no implementada : "<<std::hex<<int(opcode)<<std::endl;
+    std::cout<<"operación no implementada: "<<std::hex<<int(opcode)<<std::endl;
+    std::cout<<"PC: "<<std::hex<<int(PC)<<std::endl;
     return false;
 }
 

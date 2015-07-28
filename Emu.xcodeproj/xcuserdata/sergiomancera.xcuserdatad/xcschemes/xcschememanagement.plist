@@ -4,13 +4,17 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
-		<key>Emu.xcscheme</key>
+		<key>dr mario.xcscheme</key>
 		<dict>
+			<key>isShown</key>
+			<true/>
 			<key>orderHint</key>
-			<integer>0</integer>
+			<integer>2</integer>
 		</dict>
 		<key>tetris.xcscheme</key>
 		<dict>
+			<key>isShown</key>
+			<true/>
 			<key>orderHint</key>
 			<integer>1</integer>
 		</dict>
