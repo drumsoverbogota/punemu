@@ -13,11 +13,14 @@
 
 #define CALL_MEMBER_FN(object,ptrToMember)  ()
 
+#ifndef STD
+#define STD
+
 #include <iostream>
+#endif
+
 #include <fstream>
 #include <string>
-#include <vector>
-#include <bitset>
 
 //typedef void (*GameBoyTable[16*16])();
 

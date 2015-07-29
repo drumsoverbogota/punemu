@@ -5,70 +5,119 @@
 //  Created by Sergio Mancera on 30/06/15.
 //  Copyright (c) 2015 Sergio Mancera. All rights reserved.
 //
+#ifndef SDL
+#define SDL
+
 #include <SDL2/SDL.h>
 #include <SDL2_image/SDL_image.h>
 #include <SDL2_ttf/SDL_ttf.h>
 
-#include "emu.hpp"
+SDL_Window* gWindow = NULL;
+SDL_Renderer* gRenderer;
+TTF_Font* gFont;
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
-SDL_Window* window = NULL;
-SDL_Renderer* renderer;
-TTF_Font* font;
-SDL_Texture* SurfaceToTexture( SDL_Surface* surf );
-SDL_Texture* solidTexture;
+#endif
+
+#include "emu.hpp"
+#include "LTexture.hpp"
+
 
 // Setup
-void Render();
+
+
+
+class LTexture
+{
+public:
+    //Initializes variables
+    LTexture();
+    
+    //Deallocates memory
+    ~LTexture();
+    
+    //Loads image at specified path
+    bool loadFromFile( std::string path );
+    
+    //Creates image from font string
+    bool loadFromRenderedText( std::string textureText, SDL_Color textColor );
+    
+    //Deallocates texture
+    void free();
+    
+    //Set color modulation
+    void setColor( Uint8 red, Uint8 green, Uint8 blue );
+    
+    //Set blending
+    void setBlendMode( SDL_BlendMode blending );
+    
+    //Set alpha modulation
+    void setAlpha( Uint8 alpha );
+    
+    //Renders texture at given point
+    void render( int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE );
+    
+    //Gets image dimensions
+    int getWidth();
+    int getHeight();
+    
+private:
+    //The actual hardware texture
+    SDL_Texture* mTexture;
+    
+    //Image dimensions
+    int mWidth;
+    int mHeight;
+};
+
+
+LTexture gTextTexture;
+
 bool InitEverything();
 bool InitSDL();
 bool CreateWindow();
 bool CreateRenderer();
 void SetupRenderer();
-void CreateTextTextures();
-
-// Our new function for setting uo SDL_TTF
 bool SetupTTF( const std::string &fontName );
 
 int main(int argc, const char * argv[]) {
-    
+
     std::string rom = argv[2];
 
     if(!InitEverything())
         return -1;
     
+    bool exit = false;
+    SDL_Event e;
+    
     emu c_emu(rom);
     c_emu.init(false);
-            Render();
-    for (;;) {
-
-        if(!c_emu.emulateCycle()){
-            
-            std::cout<<"Fin de la emulación";
-            break;
+    while (!exit) {
+        exit = !c_emu.emulateCycle();
+        while( SDL_PollEvent( &e ) != 0 )
+        {
+            //User requests quit
+            if( e.type == SDL_QUIT )
+            {
+                exit = true;
+            }
         }
+        
+        SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+        SDL_RenderClear( gRenderer );
+        
+        //Render current frame
+        gTextTexture.render( ( SCREEN_WIDTH - gTextTexture.getWidth() ) / 2, ( SCREEN_HEIGHT - gTextTexture.getHeight() ) / 2 );
+        
+        //Update screen
+        SDL_RenderPresent( gRenderer );        
+        
     }
+    std::cout<<"Fin de la emulación";
     return 0;
 }
-
-void Render()
-{
-    // Clear the window and make it all red
-    SDL_RenderClear( renderer );
-    
-    SDL_Rect solidRect;
-    solidRect.x = 0;
-    solidRect.y = 0;
-    
-    // Render our text objects ( like normal )
-    SDL_RenderCopy( renderer, solidTexture, nullptr, &solidRect );
-    
-    // Render the changes above
-    SDL_RenderPresent( renderer);
-}
-
 
 bool InitEverything()
 {
@@ -86,26 +135,9 @@ bool InitEverything()
     if ( !SetupTTF( "/Library/Fonts/Arial.ttf" ) )
         return false;
     
-    CreateTextTextures();
-    
     return true;
 }
 
-void CreateTextTextures(){
-    SDL_Surface* solid = TTF_RenderText_Solid( font, "solid", {255,255,255,0} );
-    solidTexture = SurfaceToTexture( solid );
-}
-
-SDL_Texture* SurfaceToTexture( SDL_Surface* surf )
-{
-    SDL_Texture* text;
-    
-    text = SDL_CreateTextureFromSurface( renderer, surf );
-    
-    SDL_FreeSurface( surf );
-    
-    return text;
-}
 
 bool InitSDL()
 {
@@ -128,13 +160,22 @@ bool SetupTTF( const std::string &fontName)
     }
     
     // Load our fonts, with a huge size
-    font = TTF_OpenFont( fontName.c_str(), 90 );
+    gFont = TTF_OpenFont( fontName.c_str(), 90 );
     
     // Error check
-    if ( font == nullptr )
+    if ( gFont == nullptr )
     {
         std::cout << " Failed to load font : " << TTF_GetError() << std::endl;
         return false;
+    }
+    else{
+        //Render text
+        SDL_Color textColor = { 0, 0, 0 };
+        if( !gTextTexture.loadFromRenderedText( "The quick brown fox jumps over the lazy dog", textColor ) )
+        {
+            printf( "Failed to render text texture!\n" );
+            return false;
+        }
     }
     
     return true;
@@ -142,9 +183,9 @@ bool SetupTTF( const std::string &fontName)
 
 bool CreateWindow()
 {
-    window = SDL_CreateWindow( "Server",0,0, SCREEN_WIDTH, SCREEN_HEIGHT, 0 );
+    gWindow = SDL_CreateWindow( "Server",0,0, SCREEN_WIDTH, SCREEN_HEIGHT, 0 );
     
-    if ( window == nullptr )
+    if ( gWindow == nullptr )
     {
         std::cout << "Failed to create window : " << SDL_GetError();
         return false;
@@ -154,9 +195,9 @@ bool CreateWindow()
 }
 bool CreateRenderer()
 {
-    renderer = SDL_CreateRenderer( window, -1, SDL_RENDERER_ACCELERATED );
+    gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED );
     
-    if ( renderer == nullptr )
+    if ( gRenderer == nullptr )
     {
         std::cout << "Failed to create renderer : " << SDL_GetError();
         return false;
@@ -167,9 +208,155 @@ bool CreateRenderer()
 void SetupRenderer()
 {
     // Set size of renderer to the same as window
-    SDL_RenderSetLogicalSize( renderer, SCREEN_WIDTH, SCREEN_HEIGHT );
+    SDL_RenderSetLogicalSize( gRenderer, SCREEN_WIDTH, SCREEN_HEIGHT );
     
     // Set color of renderer to red
-    SDL_SetRenderDrawColor( renderer, 0, 0, 0, 255 );
+    SDL_SetRenderDrawColor( gRenderer, 0, 255, 0, 255 );
 }
 
+#include "LTexture.hpp"
+
+LTexture::LTexture()
+{
+    //Initialize
+    mTexture = NULL;
+    mWidth = 0;
+    mHeight = 0;
+}
+
+LTexture::~LTexture()
+{
+    //Deallocate
+    free();
+}
+
+bool LTexture::loadFromFile( std::string path )
+{
+    //Get rid of preexisting texture
+    free();
+    
+    //The final texture
+    SDL_Texture* newTexture = NULL;
+    
+    //Load image at specified path
+    SDL_Surface* loadedSurface = IMG_Load( path.c_str() );
+    if( loadedSurface == NULL )
+    {
+        printf( "Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError() );
+    }
+    else
+    {
+        //Color key image
+        SDL_SetColorKey( loadedSurface, SDL_TRUE, SDL_MapRGB( loadedSurface->format, 0, 0xFF, 0xFF ) );
+        
+        //Create texture from surface pixels
+        newTexture = SDL_CreateTextureFromSurface( gRenderer, loadedSurface );
+        if( newTexture == NULL )
+        {
+            printf( "Unable to create texture from %s! SDL Error: %s\n", path.c_str(), SDL_GetError() );
+        }
+        else
+        {
+            //Get image dimensions
+            mWidth = loadedSurface->w;
+            mHeight = loadedSurface->h;
+        }
+        
+        //Get rid of old loaded surface
+        SDL_FreeSurface( loadedSurface );
+    }
+    
+    //Return success
+    mTexture = newTexture;
+    return mTexture != NULL;
+}
+
+bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor )
+{
+    //Get rid of preexisting texture
+    free();
+    
+    //Render text surface
+    SDL_Surface* textSurface = TTF_RenderText_Solid( gFont, textureText.c_str(), textColor );
+    if( textSurface == NULL )
+    {
+        printf( "Unable to render text surface! SDL_ttf Error: %s\n", TTF_GetError() );
+    }
+    else
+    {
+        //Create texture from surface pixels
+        mTexture = SDL_CreateTextureFromSurface( gRenderer, textSurface );
+        if( mTexture == NULL )
+        {
+            printf( "Unable to create texture from rendered text! SDL Error: %s\n", SDL_GetError() );
+        }
+        else
+        {
+            //Get image dimensions
+            mWidth = textSurface->w;
+            mHeight = textSurface->h;
+        }
+        
+        //Get rid of old surface
+        SDL_FreeSurface( textSurface );
+    }
+    
+    //Return success
+    return mTexture != NULL;
+}
+
+void LTexture::free()
+{
+    //Free texture if it exists
+    if( mTexture != NULL )
+    {
+        SDL_DestroyTexture( mTexture );
+        mTexture = NULL;
+        mWidth = 0;
+        mHeight = 0;
+    }
+}
+
+void LTexture::setColor( Uint8 red, Uint8 green, Uint8 blue )
+{
+    //Modulate texture rgb
+    SDL_SetTextureColorMod( mTexture, red, green, blue );
+}
+
+void LTexture::setBlendMode( SDL_BlendMode blending )
+{
+    //Set blending function
+    SDL_SetTextureBlendMode( mTexture, blending );
+}
+
+void LTexture::setAlpha( Uint8 alpha )
+{
+    //Modulate texture alpha
+    SDL_SetTextureAlphaMod( mTexture, alpha );
+}
+
+void LTexture::render( int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip )
+{
+    //Set rendering space and render to screen
+    SDL_Rect renderQuad = { x, y, mWidth, mHeight };
+    
+    //Set clip rendering dimensions
+    if( clip != NULL )
+    {
+        renderQuad.w = clip->w;
+        renderQuad.h = clip->h;
+    }
+    
+    //Render to screen
+    SDL_RenderCopyEx( gRenderer, mTexture, clip, &renderQuad, angle, center, flip );
+}
+
+int LTexture::getWidth()
+{
+    return mWidth;
+}
+
+int LTexture::getHeight()
+{
+    return mHeight;
+}

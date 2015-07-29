@@ -7,12 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9F78108C1B6876E700DCE026 /* emu.hpp in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8E9A11B42699400AA5C04 /* emu.hpp */; };
+		9F78108D1B6876F000DCE026 /* emu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8E99F1B42698600AA5C04 /* emu.cpp */; };
 		9FD8E9991B4266EF00AA5C04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8E9981B4266EF00AA5C04 /* main.cpp */; };
-		9FD8E9A01B42698700AA5C04 /* emu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8E99F1B42698600AA5C04 /* emu.cpp */; };
 		9FEABC261B68136D00456D4C /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9FEABC251B68136C00456D4C /* SDL2.framework */; };
 		9FEABC281B68330500456D4C /* SDL2_ttf.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9FEABC271B68330500456D4C /* SDL2_ttf.framework */; };
 		9FEABC2A1B68342600456D4C /* SDL2_image.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9FEABC291B68342600456D4C /* SDL2_image.framework */; };
-		9FEB71231B5B48C600F3A821 /* readme.md in Sources */ = {isa = PBXBuildFile; fileRef = 9FEB71221B5B48C600F3A821 /* readme.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -43,9 +43,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9FEABC261B68136D00456D4C /* SDL2.framework in Frameworks */,
 				9FEABC2A1B68342600456D4C /* SDL2_image.framework in Frameworks */,
 				9FEABC281B68330500456D4C /* SDL2_ttf.framework in Frameworks */,
-				9FEABC261B68136D00456D4C /* SDL2.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -138,9 +138,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9F78108D1B6876F000DCE026 /* emu.cpp in Sources */,
+				9F78108C1B6876E700DCE026 /* emu.hpp in Sources */,
 				9FD8E9991B4266EF00AA5C04 /* main.cpp in Sources */,
-				9FEB71231B5B48C600F3A821 /* readme.md in Sources */,
-				9FD8E9A01B42698700AA5C04 /* emu.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
