@@ -18,7 +18,7 @@
 
 #include <iostream>
 #endif
-
+#include <sstream>
 #include <fstream>
 #include <string>
 
@@ -167,12 +167,20 @@ private:
     
 public:
     
-
-    
     emu();
     emu(std::string file);
     void init(bool debug);
     bool emulateCycle();
+    
+    
+    unsigned short getAF();
+    unsigned short getBC();
+    unsigned short getDE();
+    unsigned short getHL();
+    unsigned short getPC();
+    unsigned short getSP();
+    
+    
 
 };
 

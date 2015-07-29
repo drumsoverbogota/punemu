@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		9F78108C1B6876E700DCE026 /* emu.hpp in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8E9A11B42699400AA5C04 /* emu.hpp */; };
 		9F78108D1B6876F000DCE026 /* emu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8E99F1B42698600AA5C04 /* emu.cpp */; };
 		9FD8E9991B4266EF00AA5C04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9FD8E9981B4266EF00AA5C04 /* main.cpp */; };
 		9FEABC261B68136D00456D4C /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9FEABC251B68136C00456D4C /* SDL2.framework */; };
@@ -32,6 +31,7 @@
 		9FD8E9981B4266EF00AA5C04 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		9FD8E99F1B42698600AA5C04 /* emu.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = emu.cpp; sourceTree = "<group>"; };
 		9FD8E9A11B42699400AA5C04 /* emu.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = emu.hpp; sourceTree = "<group>"; };
+		9FE71EC01B6938AB0040ECA7 /* cleanup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cleanup.h; sourceTree = "<group>"; };
 		9FEABC251B68136C00456D4C /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2.framework; path = ../../../../../Library/Frameworks/SDL2.framework; sourceTree = "<group>"; };
 		9FEABC271B68330500456D4C /* SDL2_ttf.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2_ttf.framework; path = ../../../../../Library/Frameworks/SDL2_ttf.framework; sourceTree = "<group>"; };
 		9FEABC291B68342600456D4C /* SDL2_image.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2_image.framework; path = ../../../../../Library/Frameworks/SDL2_image.framework; sourceTree = "<group>"; };
@@ -78,6 +78,7 @@
 				9FD8E9981B4266EF00AA5C04 /* main.cpp */,
 				9FD8E99F1B42698600AA5C04 /* emu.cpp */,
 				9FD8E9A11B42699400AA5C04 /* emu.hpp */,
+				9FE71EC01B6938AB0040ECA7 /* cleanup.h */,
 			);
 			path = Emu;
 			sourceTree = "<group>";
@@ -139,7 +140,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				9F78108D1B6876F000DCE026 /* emu.cpp in Sources */,
-				9F78108C1B6876E700DCE026 /* emu.hpp in Sources */,
 				9FD8E9991B4266EF00AA5C04 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -655,3 +655,28 @@ bool emu::emulateCycle(){
     return true;
     
 }
+
+
+unsigned short emu::getAF(){
+    return R[A] << 8 | R[F];
+}
+
+unsigned short emu::getBC(){
+    return R[B] << 8 | R[C];
+}
+
+unsigned short emu::getDE(){
+    return R[D] << 8 | R[E];
+}
+
+unsigned short emu::getHL(){
+    return R[H] << 8 | R[L];
+}
+
+unsigned short emu::getPC(){
+    return PC;
+}
+
+unsigned short emu::getSP(){
+    return SP;
+}
