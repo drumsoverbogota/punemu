@@ -43,9 +43,15 @@ void renderTexture(SDL_Texture *tex, SDL_Renderer *ren, int x, int y, SDL_Rect *
 int main(int argc, const char * argv[]) {
 
     std::string rom = argv[2];
+    
+    
+    bool graphics = false;
 
-    if(!InitEverything())
-        return -1;
+    if (graphics) {
+        if(!InitEverything())
+            return -1;
+    }
+
     int i = 0;
     
 
@@ -56,50 +62,59 @@ int main(int argc, const char * argv[]) {
     emu c_emu(rom);
     c_emu.init(true);
     
-    bool continuar = false;
+    bool continuar = true;
     while (!exit) {
         
         i++;
         if (continuar){
             exit = !c_emu.emulateCycle();
-            continuar = false;
+            //continuar = false;
         }
-        
-        while( SDL_PollEvent( &e ) != 0 )
-        {
-            //User requests quit
-            if( e.type == SDL_QUIT )
+        if (graphics){
+            while( SDL_PollEvent( &e ) != 0 )
             {
-                exit = true;
-            }
-            else if (e.type == SDL_KEYDOWN){
-                continuar = true;
+                //User requests quit
+                if( e.type == SDL_QUIT )
+                {
+                    exit = true;
+                }
+                else if (e.type == SDL_KEYDOWN){
+                    switch( e.key.keysym.sym ){
+                        case SDLK_c:
+                            continuar = !continuar;
+                            
+                    }
+                    
+                    
+                }
+                
             }
             
+            std::string AF = "AF:" + int_to_hex(c_emu.getAF());
+            std::string BC = "BC:" + int_to_hex(c_emu.getBC());
+            std::string DE = "DE:" + int_to_hex(c_emu.getDE());
+            std::string HL = "HL:" + int_to_hex(c_emu.getHL());
+            std::string SP = "SP:" + int_to_hex(c_emu.getSP());
+            std::string PC = "PC:" + int_to_hex(c_emu.getPC());
+            
+            std::string next = "NEXT:" + c_emu.nextopcode();
+            
+            SDL_RenderClear(gRenderer);
+            //We can draw our message as we do any other texture, since it's been
+            //rendered to a texture
+            
+            escribir(AF,10,10);
+            escribir(BC,10,30);
+            escribir(DE,10,50);
+            escribir(HL,10,70);
+            escribir(SP,10,90);
+            escribir(PC,10,110);
+            escribir(next,10,130);
+            
+            SDL_RenderPresent(gRenderer);
+            //SDL_Delay(200);
+            
         }
-
-        std::string AF = "AF:" + int_to_hex(c_emu.getAF());
-        std::string BC = "BC:" + int_to_hex(c_emu.getBC());
-        std::string DE = "DE:" + int_to_hex(c_emu.getDE());
-        std::string HL = "HL:" + int_to_hex(c_emu.getHL());
-        std::string SP = "SP:" + int_to_hex(c_emu.getSP());
-        std::string PC = "PC:" + int_to_hex(c_emu.getPC());
-
-        
-        
-        SDL_RenderClear(gRenderer);
-        //We can draw our message as we do any other texture, since it's been
-        //rendered to a texture
-        
-        escribir(AF,10,10);
-        escribir(BC,10,30);
-        escribir(DE,10,50);
-        escribir(HL,10,70);
-        escribir(SP,10,90);
-        escribir(PC,10,110);
-        
-        SDL_RenderPresent(gRenderer);
-        //SDL_Delay(200);
         
     }
     
@@ -149,7 +164,7 @@ bool SetupTTF( const std::string &fontName)
     }
     
     // Load our fonts, with a huge size
-    gFont = TTF_OpenFont( fontName.c_str(), 12 );
+    gFont = TTF_OpenFont( fontName.c_str(), 16 );
     
     // Error check
     if ( gFont == nullptr )
