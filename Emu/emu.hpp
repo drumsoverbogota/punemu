@@ -44,6 +44,7 @@ private:
     bool isgbcolor;
     char cart_type;
 
+    int test = 0;
     
     std::ifstream cart;
     unsigned char * rom;
@@ -68,12 +69,13 @@ private:
     int curr_m;
     int curr_t;
 
-
+    bool ime;
 
     void add_counter(int c=4);
     
     unsigned char addition8bit(unsigned char a,unsigned char b,unsigned int z);
     unsigned char substract8bit(unsigned char a,unsigned char b,unsigned int z);
+    unsigned char and8bit(unsigned char a,unsigned char b);
     unsigned char or8bit(unsigned char a,unsigned char b);
     unsigned char xor8bit(unsigned char a,unsigned char b);
     void inline r_rotation(unsigned char* r);
@@ -101,11 +103,16 @@ private:
     
     bool JR_NZ_r8();    //0x20
     bool LD_HL_d16();   //0x21
+    bool JR_Z_r8();     //0x28
     bool LDI_A_pHL();   //0x2A
+    bool CPL();         //0x2F
     
     bool LD_SP_d16();   //0x31
     bool LDD_pHL_A();   //0x32
+    bool INC_pHL();     //0x34
     bool LD_pHL_d8();   //0x36
+    bool INC_A();       //0x3C
+    bool DEC_A();       //0x3D
     bool LD_A_d8();     //0x3E
 
     bool LD_A_B();      //0x78
@@ -113,22 +120,40 @@ private:
     
     bool ADC_A_C();     //0x89
     
+    bool AND_A();       //0xA7
     bool XOR_A();       //0xAF
     
     bool OR_C();        //0xB1
     
+    bool RET_NZ();      //0xC0
+    bool POP_BC();      //0xC1
     bool JP_a16();      //0xC3
+    bool PUSH_BC();     //0xC5
+    bool RET_Z();       //0xC8
     bool RET();         //0xC9
     bool CALL_a16();    //0xCD
     
+    bool POP_DE();      //0xD1
+    bool PUSH_DE();     //0xD5
+    bool RETI();        //0xD9
+    
     bool LDH_pa8_A();   //0xE0
+    bool POP_HL();      //0xE1
     bool LD_pC_A();     //0xE2
+    bool PUSH_HL();     //0xE5
+    bool AND_d8();      //0xE6
     bool JP_pHL();      //0xE9
     bool LD_pa16_A();   //0xEA
     
     bool LDH_A_pa8();   //0xF0
+    bool POP_AF();      //0xF1
     bool DI();          //0xF3
+    bool PUSH_AF();     //0xF5
+    bool LD_A_pa16();   //0xFA
+    bool EI();          //0xFB
     bool CP_d8();       //0xFE
+
+    bool RST(unsigned char addr);
 
     std::string opcodes [0x100] = {"0x0,NOP",
         "0x01 n n,LD BC,nn",
@@ -398,10 +423,10 @@ private:
         &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::DEC_D, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::LD_E_d8, &emu::RRA,
         
         //0x2X
-        &emu::JR_NZ_r8, &emu::LD_HL_d16, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::LDI_A_pHL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
+        &emu::JR_NZ_r8, &emu::LD_HL_d16, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::JR_Z_r8, &emu::cpuNULL, &emu::LDI_A_pHL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::CPL,
         
         //0x3X
-        &emu::cpuNULL, &emu::LD_SP_d16, &emu::LDD_pHL_A, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::LD_pHL_d8, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::LD_A_d8, &emu::cpuNULL,
+        &emu::cpuNULL, &emu::LD_SP_d16, &emu::LDD_pHL_A, &emu::cpuNULL, &emu::INC_pHL, &emu::cpuNULL, &emu::LD_pHL_d8, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::INC_A, &emu::DEC_A, &emu::LD_A_d8, &emu::cpuNULL,
         
         //0x4X
         &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
@@ -422,22 +447,22 @@ private:
         &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
         
         //0xAX
-        &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::XOR_A,
+        &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::AND_A, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::XOR_A,
         
         //0xBX
         &emu::cpuNULL, &emu::OR_C, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
         
         //0xCX
-        &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::JP_a16, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::RET, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::CALL_a16, &emu::cpuNULL, &emu::cpuNULL,
+        &emu::RET_NZ, &emu::POP_BC, &emu::cpuNULL, &emu::JP_a16, &emu::cpuNULL, &emu::PUSH_BC, &emu::cpuNULL, &emu::cpuNULL, &emu::RET_Z, &emu::RET, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::CALL_a16, &emu::cpuNULL, &emu::cpuNULL,
         
         //0xDX
-        &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
+        &emu::cpuNULL, &emu::POP_DE, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::PUSH_DE, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::RETI, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
         
         //0xEX
-        &emu::LDH_pa8_A, &emu::cpuNULL, &emu::LD_pC_A, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::JP_pHL, &emu::LD_pa16_A, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
+        &emu::LDH_pa8_A, &emu::POP_HL, &emu::LD_pC_A, &emu::cpuNULL, &emu::cpuNULL, &emu::PUSH_HL, &emu::AND_d8, &emu::cpuNULL, &emu::cpuNULL, &emu::JP_pHL, &emu::LD_pa16_A, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
         
         //0xFX
-        &emu::LDH_A_pa8, &emu::cpuNULL, &emu::cpuNULL, &emu::DI, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::CP_d8, &emu::cpuNULL,
+        &emu::LDH_A_pa8, &emu::POP_AF, &emu::cpuNULL, &emu::DI, &emu::cpuNULL, &emu::PUSH_AF, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::LD_A_pa16, &emu::EI, &emu::cpuNULL, &emu::cpuNULL, &emu::CP_d8, &emu::cpuNULL,
         
         
     };

@@ -152,6 +152,19 @@ unsigned char emu::ReadMemory(unsigned short address){
     
 }
 
+unsigned char emu::and8bit(unsigned char a,unsigned char b){
+    unsigned char result = a & b;
+    R[F] |= 0x20;
+    if (result == 0x0)
+        R[F] |= 0xAF;
+    else
+        R[F] |= 0x7F;
+
+
+    return result;
+}
+
+
 unsigned char emu::or8bit(unsigned char a,unsigned char b){
     unsigned char result = a | b;
     if (result == 0x0)
@@ -286,6 +299,7 @@ bool emu::LD_A_B(){
         std::cout<<"LD A B"<<std::endl;
     R[A] = R[B];
     PC ++;
+    add_counter();
     return true;
 }
 
@@ -294,14 +308,15 @@ bool emu::LD_A_D(){
         std::cout<<"LD A D "<<std::endl;
     R[A] = R[D];
     PC ++;
+    add_counter();
     return true;
 }
 
 
 bool emu::LD_A_d8(){
     if (debug)
-        std::cout<<"LD A, "<<std::hex<<int(rom[PC + 1])<<std::endl;
-    R[A] = rom[PC + 1];
+        std::cout<<"LD A, "<<std::hex<<int(ReadMemory(PC + 1))<<std::endl;
+    R[A] = ReadMemory(PC + 1);
     PC += 2;
     add_counter(8);
     return true;
@@ -310,8 +325,8 @@ bool emu::LD_A_d8(){
 
 bool emu::LD_B_d8(){
     if (debug)
-        std::cout<<"LD B, "<<std::hex<<int(rom[PC + 1])<<std::endl;
-    R[B] = rom[PC + 1];
+        std::cout<<"LD B, "<<std::hex<<int(ReadMemory(PC + 1))<<std::endl;
+    R[B] = ReadMemory(PC + 1);
     PC += 2;
     add_counter(8);
     return true;
@@ -319,8 +334,8 @@ bool emu::LD_B_d8(){
 
 bool emu::LD_C_d8(){
     if (debug)
-        std::cout<<"LD C, "<<std::hex<<int(rom[PC + 1])<<std::endl;
-    R[C] = rom[PC + 1];
+        std::cout<<"LD C, "<<std::hex<<int(ReadMemory(PC + 1))<<std::endl;
+    R[C] = ReadMemory(PC + 1);
     PC += 2;
     add_counter(8);
     return true;
@@ -328,8 +343,8 @@ bool emu::LD_C_d8(){
 
 bool emu::LD_E_d8(){
     if (debug)
-        std::cout<<"LD E, "<<std::hex<<int(rom[PC + 1])<<std::endl;
-    R[E] = rom[PC + 1];
+        std::cout<<"LD E, "<<std::hex<<int(ReadMemory(PC + 1))<<std::endl;
+    R[E] = ReadMemory(PC + 1);
     PC += 2;
     add_counter(8);
     return true;
@@ -338,20 +353,34 @@ bool emu::LD_E_d8(){
 
 bool emu::LD_pHL_d8(){
     if (debug)
-        std::cout<<"LD (HL),"<<std::hex<<int(rom[PC + 1])<<std::endl;
-    WriteMemory(R[H] << 8 | R[L], rom[PC+1]);
+        std::cout<<"LD (HL),"<<std::hex<<int(ReadMemory(PC + 1))<<std::endl;
+    WriteMemory(R[H] << 8 | R[L], ReadMemory(PC+1));
     PC += 2;
+    add_counter(12);
+    return true;
+}
+
+bool emu::LD_A_pa16(){
+    if (debug)
+        std::cout<<"LD A,("<<std::hex<<int(ReadMemory(PC + 2) << 8 |  ReadMemory(PC + 1))<<")"<<std::endl;
+    
+    unsigned short a16 = ReadMemory(PC + 2) << 8 |  ReadMemory(PC + 1);
+    R[A] = ReadMemory(a16);
+    
+    PC+=3;
+    add_counter(16);
     return true;
 }
 
 bool emu::LD_pa16_A(){
     if (debug)
-        std::cout<<"LD ("<<std::hex<<int(rom[PC + 2] << 8 |  rom[PC + 1])<<"),A"<<std::endl;
+        std::cout<<"LD ("<<std::hex<<int(ReadMemory(PC + 2) << 8 |  ReadMemory(PC + 1))<<"),A"<<std::endl;
     
-    unsigned short a16 = rom[PC + 2] << 8 |  rom[PC + 1];
+    unsigned short a16 = ReadMemory(PC + 2) << 8 |  ReadMemory(PC + 1);
     WriteMemory(a16, R[A]);
     
     PC+=3;
+    add_counter(16);
     return true;
 }
 
@@ -363,6 +392,7 @@ bool emu::LD_pC_A(){
     WriteMemory(0xFF00+R[C], R[A]);
     
     PC++;
+    add_counter(8);
     return true;
 }
 
@@ -392,14 +422,15 @@ bool emu::LDI_A_pHL(){
     R[H] = (HL & 0xFF00)>>8;
     R[L] = HL & 0x00FF;
     PC++;
+    add_counter(8);
     return true;
 }
 
 bool emu::LDH_pa8_A(){
     if (debug)
-        std::cout<<"LDH ("<<std::hex<<int(rom[PC + 1])<<"),A"<<std::endl;
+        std::cout<<"LDH ("<<std::hex<<int(ReadMemory(PC + 1))<<"),A"<<std::endl;
     
-    WriteMemory(0xFF00+rom[PC + 1], R[A]);
+    WriteMemory(0xFF00+ReadMemory(PC + 1), R[A]);
     
     PC+=2;
     
@@ -409,9 +440,9 @@ bool emu::LDH_pa8_A(){
 
 bool emu::LDH_A_pa8(){
     if (debug)
-        std::cout<<"LDH A,("<<std::hex<<int(rom[PC + 1])<<")"<<std::endl;
+        std::cout<<"LDH A,("<<std::hex<<int(ReadMemory(PC + 1))<<")"<<std::endl;
     
-    R[A] = ReadMemory(0xFF00+ rom[PC + 1]);
+    R[A] = ReadMemory(0xFF00+ ReadMemory(PC + 1));
     PC+=2;
     
     add_counter(12);
@@ -422,18 +453,19 @@ bool emu::LDH_A_pa8(){
 
 bool emu::LD_BC_d16(){
     if (debug)
-        std::cout<<"LD BC, "<<std::hex<<int(rom[PC + 2] << 8 |  rom[PC + 1])<<std::endl;
-    R[B] = rom[PC + 2];
-    R[C] = rom[PC + 1];
+        std::cout<<"LD BC, "<<std::hex<<int(ReadMemory(PC + 2) << 8 |  ReadMemory(PC + 1))<<std::endl;
+    R[B] = ReadMemory(PC + 2);
+    R[C] = ReadMemory(PC + 1);
     PC += 3;
+    add_counter(12);
     return true;
 }
 
 bool emu::LD_HL_d16(){
     if (debug)
-        std::cout<<"LD HL, "<<std::hex<<int(rom[PC + 2] << 8 |  rom[PC + 1])<<std::endl;
-    R[H] = rom[PC + 2];
-    R[L] = rom[PC + 1];
+        std::cout<<"LD HL, "<<std::hex<<int(ReadMemory(PC + 2) << 8 |  ReadMemory(PC + 1))<<std::endl;
+    R[H] = ReadMemory(PC + 2);
+    R[L] = ReadMemory(PC + 1);
     PC += 3;
     add_counter(12);
     return true;
@@ -441,11 +473,129 @@ bool emu::LD_HL_d16(){
 
 bool emu::LD_SP_d16(){
     if (debug)
-        std::cout<<"LD SP, "<<std::hex<<int(rom[PC + 2] << 8 |  rom[PC + 1])<<std::endl;
-    SP = rom[PC + 2] << 8 |  rom[PC + 1];
+        std::cout<<"LD SP, "<<std::hex<<int(ReadMemory(PC + 2) << 8 |  ReadMemory(PC + 1))<<std::endl;
+    SP = ReadMemory(PC + 2) << 8 |  ReadMemory(PC + 1);
     PC += 3;
+    add_counter(12);
     return true;
 }
+
+bool emu::PUSH_AF(){
+    if (debug)
+        std::cout<<"PUSH AF"<<std::endl;
+    
+    std::cout<<"AF"<<getAF()<<std::endl;
+    
+    WriteMemory(SP-1, R[A]);
+    WriteMemory(SP-2, R[F]);
+    SP -= 2;
+    PC++;
+    add_counter(16);
+    return true;
+}
+
+bool emu::PUSH_BC(){
+    if (debug)
+        std::cout<<"PUSH BC"<<std::endl;
+    WriteMemory(SP-1, R[B]);
+    WriteMemory(SP-2, R[C]);
+    SP -= 2;
+    PC++;
+    add_counter(16);
+    return true;
+}
+
+bool emu::PUSH_DE(){
+    if (debug)
+        std::cout<<"PUSH DE"<<std::endl;
+    WriteMemory(SP-1, R[D]);
+    WriteMemory(SP-2, R[E]);
+    SP -= 2;
+    PC++;
+    add_counter(16);
+    return true;
+}
+
+bool emu::PUSH_HL(){
+    if (debug)
+        std::cout<<"PUSH HL"<<std::endl;
+    
+    std::cout<<"------"<<std::endl;
+    std::cout<<"AF"<<getAF()<<std::endl;
+    std::cout<<"BC"<<getBC()<<std::endl;
+    std::cout<<"DE"<<getDE()<<std::endl;
+    std::cout<<"HL"<<getHL()<<std::endl;
+
+    WriteMemory(SP-1, R[H]);
+    WriteMemory(SP-2, R[L]);
+    SP -= 2;
+    PC++;
+    add_counter(16);
+    return true;
+}
+
+bool emu::POP_AF(){
+    if (debug)
+        std::cout<<"POP AF"<<std::endl;
+    
+    std::cout<<"------"<<std::endl;
+    std::cout<<"AF"<<getAF()<<std::endl;
+    std::cout<<"BC"<<getBC()<<std::endl;
+    std::cout<<"DE"<<getDE()<<std::endl;
+    std::cout<<"HL"<<getHL()<<std::endl;
+    
+    R[A] = ReadMemory(SP+1);
+    R[F] = ReadMemory(SP);
+    
+    SP += 2;
+    PC++;
+    add_counter(12);
+    
+    return true;
+}
+
+bool emu::POP_BC(){
+    if (debug)
+        std::cout<<"POP HL"<<std::endl;
+    
+    R[B] = ReadMemory(SP+1);
+    R[C] = ReadMemory(SP);
+    
+    SP += 2;
+    PC++;
+    add_counter(12);
+    
+    return true;
+}
+
+bool emu::POP_DE(){
+    if (debug)
+        std::cout<<"POP HL"<<std::endl;
+    
+    R[D] = ReadMemory(SP+1);
+    R[E] = ReadMemory(SP);
+    
+    SP += 2;
+    PC++;
+    add_counter(12);
+    
+    return true;
+}
+
+bool emu::POP_HL(){
+    if (debug)
+        std::cout<<"POP HL"<<std::endl;
+    
+    R[H] = ReadMemory(SP+1);
+    R[L] = ReadMemory(SP);
+    
+    SP += 2;
+    PC++;
+    add_counter(12);
+    
+    return true;
+}
+
 
 //+++++++++++++++++++++++++++8-bit ALU +++++++++++++++++++++++++++//
 
@@ -454,19 +604,34 @@ bool emu::ADC_A_C(){
         std::cout<<"ADC A,C "<<std::endl;
     R[A] = addition8bit(R[A], R[C], (R[F]&0x10)>>4);
     PC++;
+    add_counter();
     return true;
 }
 
+bool emu::AND_d8(){
+    if (debug)
+        std::cout<<"AND "<<std::hex<<int(ReadMemory(PC + 1))<<std::endl;
+    R[A] = and8bit(R[A], ReadMemory(PC+1));
+    PC+=2;
+    add_counter(8);
+    return true;
+}
+
+bool emu::AND_A(){
+    if (debug)
+        std::cout<<"AND A"<<std::endl;
+    R[A] = and8bit(R[A], R[A]);
+    PC++;
+    add_counter();
+    return true;
+}
 
 bool emu::OR_C(){
     if (debug)
         std::cout<<"OR C"<<std::endl;
-    //std::cout<<"F:"<<std::hex<<int(R[F])<<std::endl;
-    //std::cout<<"A:"<<std::hex<<int(R[A])<<" C:"<<std::hex<<int(R[C])<<std::endl;
     R[A] = or8bit(R[A], R[C]);
-    //std::cout<<"F:"<<std::hex<<int(R[F])<<std::endl;
-    //std::cout<<"A:"<<std::hex<<int(R[A])<<" C:"<<std::hex<<int(R[C])<<std::endl;
     PC++;
+    add_counter();
     return true;
 }
 
@@ -481,11 +646,19 @@ bool emu::XOR_A(){
 
 bool emu::CP_d8(){
     if (debug)
-        std::cout<<"CP "<<std::hex<<int(rom[PC + 1])<<std::endl;
-    substract8bit(R[A], rom[PC+1], 0);
+        std::cout<<"CP "<<std::hex<<int(ReadMemory(PC + 1))<<std::endl;
+    substract8bit(R[A], ReadMemory(PC+1), 0);
     PC+=2;
-    
     add_counter(8);
+    return true;
+}
+
+bool emu::INC_A(){
+    if (debug)
+        std::cout<<"INC A"<<std::endl;
+    R[A] = addition8bit(R[A], 0x1,0);
+    PC++;
+    add_counter();
     return true;
 }
 
@@ -493,6 +666,25 @@ bool emu::INC_C(){
     if (debug)
         std::cout<<"INC C"<<std::endl;
     R[C] = addition8bit(R[C], 0x1,0);
+    PC++;
+    add_counter();
+    return true;
+}
+
+bool emu::INC_pHL(){
+    if (debug)
+        std::cout<<"INC (HL)"<<std::endl;
+    const unsigned short HL = R[H] << 8 | R[L];
+    WriteMemory(HL, addition8bit(ReadMemory(HL), 0x1, 0) );
+    PC++;
+    add_counter(12);
+    return true;
+}
+
+bool emu::DEC_A(){
+    if (debug)
+        std::cout<<"DEC A"<<std::endl;
+    R[A] = substract8bit(R[A], 0x1,0);
     PC++;
     add_counter();
     return true;
@@ -539,6 +731,7 @@ bool emu::DEC_BC(){
     R[B] = (BC & 0xFF00)>>8;
     R[C] = BC & 0x00FF;
     PC++;
+    add_counter(8);
     return true;
 }
 
@@ -553,12 +746,31 @@ bool emu::NOP(){
     return true;
 }
 
+bool emu::CPL(){
+    if (debug)
+        std::cout<<"CPL"<<std::endl;
+
+    R[A] = ~R[A];
+    R[F] |= 0x60;
+    PC++;
+    return true;
+}
+
 bool emu::DI(){
     if (debug)
         std::cout<<"DI"<<std::endl;
-    std::cout<<"TODO"<<std::endl;
+    ime=false;
     PC++;
     add_counter();
+    return true;
+}
+
+bool emu::EI(){
+    if (debug)
+        std::cout<<"EI"<<std::endl;
+    PC++;
+    add_counter();
+    ime=true;
     return true;
 }
 
@@ -569,7 +781,7 @@ bool emu::RRA(){
         std::cout<<"RRA"<<std::endl;
     
     r_rotation(&R[A]);
-    
+    add_counter();
     return true;
 }
 
@@ -581,8 +793,8 @@ bool emu::RRA(){
 
 bool emu::JP_a16(){
     if (debug)
-        std::cout<<"JP "<<std::hex<<int(rom[PC + 2] << 8 |  rom[PC + 1])<<std::endl;
-    PC = rom[PC + 2] << 8 |  rom[PC + 1];
+        std::cout<<"JP "<<std::hex<<int(ReadMemory(PC + 2) << 8 |  ReadMemory(PC + 1))<<std::endl;
+    PC = ReadMemory(PC + 2) << 8 |  ReadMemory(PC + 1);
     add_counter(16);
     return true;
 }
@@ -591,13 +803,14 @@ bool emu::JP_pHL(){
     if (debug)
         std::cout<<"JP (HL)"<<std::endl;
     PC = R[H] << 8 | R[L];
+    add_counter();
     return true;
 }
 
 bool emu::JR_NZ_r8(){
     if (debug)
-        std::cout<<"JR NZ "<<std::hex<<int(rom[PC + 1])<<std::endl;
-    signed char add = rom[PC + 1];
+        std::cout<<"JR NZ "<<std::hex<<int(ReadMemory(PC + 1))<<std::endl;
+    signed char add = ReadMemory(PC + 1);
     PC += 2;
     if ((R[F] & 0x80) == 0x00){
         PC += add;
@@ -608,21 +821,44 @@ bool emu::JR_NZ_r8(){
     return true;
 }
 
+bool emu::JR_Z_r8(){
+    if (debug)
+        std::cout<<"JR Z "<<std::hex<<int(ReadMemory(PC + 1))<<std::endl;
+    signed char add = ReadMemory(PC + 1);
+    PC += 2;
+    if ((R[F] & 0x80) == 0x80){
+        PC += add;
+        add_counter(12);
+    }
+    else
+        add_counter(8);
+    return true;
+}
 //+++++++++++++++++++++++++++Calls +++++++++++++++++++++++++++//
 
 bool emu::CALL_a16(){
     if (debug)
-        std::cout<<"CALL "<<int(rom[PC + 2] << 8 |  rom[PC + 1])<<std::endl;
-    
-    unsigned short p = PC;
-    p+=2;
-    
-    WriteMemory(SP-1, (p & 0xFF00)>>8);
-    WriteMemory(SP-2, p & 0x00FF);
+        std::cout<<"CALL "<<int(ReadMemory(PC + 2) << 8 |  ReadMemory(PC + 1))<<std::endl;
 
-    PC = rom[PC + 2] << 8 |  rom[PC + 1];
+    
+    WriteMemory(SP-1, (PC+3 & 0xFF00)>>8);
+    WriteMemory(SP-2, PC+3 & 0x00FF);
+
+    PC = ReadMemory(PC + 2) << 8 |  ReadMemory(PC + 1);
     SP -= 2;
+    add_counter(24);
+    return true;
+}
 
+bool emu::RST(unsigned char addr){
+    
+    WriteMemory(SP-1, (PC & 0xFF00)>>8);
+    WriteMemory(SP-2, PC & 0x00FF);
+    
+    PC = addr;
+    SP -= 2;
+    
+    add_counter(12);
     return true;
 }
 
@@ -634,69 +870,106 @@ bool emu::RET(){
     
     if (debug)
         std::cout<<"RET"<<std::endl;
-    //std::cout<<"SP: "<<std::hex<<int(ReadMemory(SP+1)<<8 | ReadMemory(SP))<<std::endl;
     PC = 0;
-    PC |= ReadMemory(SP)+1;
+    PC |= ReadMemory(SP);
     PC |= ReadMemory(SP+1)<<8;
-
+    
     SP += 2;
+    add_counter(16);
     return true;
 }
 
+bool emu::RETI(){
+    
+    if (debug)
+        std::cout<<"RETI"<<std::endl;
+    
+    PC = 0;
+    PC |= ReadMemory(SP);
+    PC |= ReadMemory(SP+1)<<8;
+    
+
+    SP += 2;
+    add_counter(16);
+    ime=true;
+    return true;
+}
+
+bool emu::RET_Z(){
+    
+    if (debug)
+        std::cout<<"RET Z"<<std::endl;
+    //std::cout<<"SP: "<<std::hex<<int(ReadMemory(SP+1)<<8 | ReadMemory(SP))<<std::endl;
+    if ((R[F] & 0x80) == 0x80){
+        
+        PC = 0;
+        PC |= ReadMemory(SP);
+        PC |= ReadMemory(SP+1)<<8;
+        
+        SP += 2;
+        add_counter(16);
+    }
+    
+    else{
+        PC++;
+        add_counter(4);
+    }
+    return true;
+}
+
+bool emu::RET_NZ(){
+    
+    if (debug)
+        std::cout<<"RET NZ"<<std::endl;
+    //std::cout<<"SP: "<<std::hex<<int(ReadMemory(SP+1)<<8 | ReadMemory(SP))<<std::endl;
+    if ((R[F] & 0x80) == 0x00){
+        
+        PC = 0;
+        PC |= ReadMemory(SP);
+        PC |= ReadMemory(SP+1)<<8;
+    
+        SP += 2;
+        add_counter(16);
+    }
+    
+    else{
+        PC++;
+        add_counter(4);
+    }
+    return true;
+}
 
 bool emu::cpuNULL(){
     std::cout<<"operación no implementada: "<<std::hex<<int(opcode)<<std::endl;
-    std::cout<<"PC: "<<std::hex<<int(PC)<<std::endl;
+    //std::cout<<"PC: "<<std::hex<<int(PC)<<std::endl;
     return false;
 }
 
 
 bool emu::emulateCycle(){
 
-    //std::cout<<"PC:"<<std::hex<<int(PC)<<std::endl;
+    std::cout<<"PC:"<<std::hex<<int(PC)<<" ";
     
-    opcode = rom[PC];
-    return (this->*table[opcode])();
+    opcode = ReadMemory(PC);
+    bool result = (this->*table[opcode])();
     
-
     
-    /*
-    switch (opcode) {
-     
-        case 0xEE: //XOR d8
-            if (debug)
-                std::cout<<"XOR "<<std::hex<<int(rom[PC + 1])<<std::endl;
-            R[A] ^= rom[PC+1];
-            if (R[A] == 0x0)
-                R[F] &= 0x8F;
-            else
-                R[F] &= 0x0F;
-            PC += 2;
-            break;
+    if (ime) {
+        unsigned char flag = ReadMemory(0xFF0F) & ReadMemory(0xFFFF);
+        if ((flag & 0x01) > 0) {
+            test++;
+            WriteMemory(0xFF0F, 0xE0);
+            ime = false;
+            RST(0x40);
             
-        case 0xFF: // RST 38h
-        {
-            std::cout<<"OPCODE:"<<std::hex<<int(opcode)<<std::endl;
-            PC = 0xABCD;
-            //std::bitset<8> h((PC & 0xFF00)>>8);
-            //std::bitset<8> l((PC & 0x00FF));
-            unsigned char h = (PC & 0xFF00)>>8;
-            unsigned char l = PC & 0x00FF;
-
-            ram[SP-1] = h;
-            ram[SP-2] = l;
-            
-            break;
-        
         }
-        default:
-            std::cout<<"Unknown OPCODE:"<<std::hex<<int(opcode)<<std::endl;
-            return false;
-            break;
-    }*/
-    //std::cout<<"OPCODE:"<<std::hex<<int(opcode)<<std::endl;
-    //std::cout<<"PC:"<<std::hex<<int(PC)<<std::endl;
-    return true;
+    }
+    
+    if (test == 3 ) {
+        result = false;
+        std::cout<<"INTERRUPT"<<std::endl;
+    }
+    return result;
     
 }
 
@@ -747,6 +1020,7 @@ void emu::add_counter(int c){
         }
 
     }
+    
 }
 
 unsigned short emu::getAF(){
@@ -774,6 +1048,6 @@ unsigned short emu::getSP(){
 }
 
 std::string emu::nextopcode(){
-    return opcodes[rom[PC]];
+    return opcodes[ReadMemory(PC)];
 }
 
