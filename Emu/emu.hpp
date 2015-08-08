@@ -78,6 +78,7 @@ private:
     unsigned char and8bit(unsigned char a,unsigned char b);
     unsigned char or8bit(unsigned char a,unsigned char b);
     unsigned char xor8bit(unsigned char a,unsigned char b);
+    unsigned char swap8bit(unsigned char a);
     void inline r_rotation(unsigned char* r);
     
     unsigned char inline ReadMemory(unsigned short address);
@@ -85,6 +86,7 @@ private:
 
     
     bool cpuNULL();
+    bool cpuCBNULL();
     
     //Instrucciones
     
@@ -115,14 +117,20 @@ private:
     bool DEC_A();       //0x3D
     bool LD_A_d8();     //0x3E
 
+    bool LD_C_A();      //0x4F
+    
     bool LD_A_B();      //0x78
+    bool LD_A_C();      //0x79
     bool LD_A_D();      //0x7A
     
     bool ADC_A_C();     //0x89
-    
+
+    bool AND_C();       //0xA1
     bool AND_A();       //0xA7
+    bool XOR_C();       //0xA9
     bool XOR_A();       //0xAF
-    
+
+    bool OR_B();        //0xB0
     bool OR_C();        //0xB1
     
     bool RET_NZ();      //0xC0
@@ -131,6 +139,7 @@ private:
     bool PUSH_BC();     //0xC5
     bool RET_Z();       //0xC8
     bool RET();         //0xC9
+    bool CB();          //0xCB
     bool CALL_a16();    //0xCD
     
     bool POP_DE();      //0xD1
@@ -152,6 +161,10 @@ private:
     bool LD_A_pa16();   //0xFA
     bool EI();          //0xFB
     bool CP_d8();       //0xFE
+    
+    //CB
+    
+    bool SWAP_A();      //0xCB37
 
     bool RST(unsigned char addr);
 
@@ -429,7 +442,7 @@ private:
         &emu::cpuNULL, &emu::LD_SP_d16, &emu::LDD_pHL_A, &emu::cpuNULL, &emu::INC_pHL, &emu::cpuNULL, &emu::LD_pHL_d8, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::INC_A, &emu::DEC_A, &emu::LD_A_d8, &emu::cpuNULL,
         
         //0x4X
-        &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
+        &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::LD_C_A,
         
         //0x5X
         &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
@@ -438,7 +451,7 @@ private:
         &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
         
         //0x7X
-        &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::LD_A_B, &emu::cpuNULL, &emu::LD_A_D, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
+        &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::LD_A_B, &emu::LD_A_C, &emu::LD_A_D, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
         
         //0x8X
         &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::ADC_A_C, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
@@ -447,13 +460,13 @@ private:
         &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
         
         //0xAX
-        &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::AND_A, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::XOR_A,
+        &emu::cpuNULL, &emu::AND_C, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::AND_A, &emu::cpuNULL, &emu::XOR_C, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::XOR_A,
         
         //0xBX
-        &emu::cpuNULL, &emu::OR_C, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
+        &emu::OR_B, &emu::OR_C, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
         
         //0xCX
-        &emu::RET_NZ, &emu::POP_BC, &emu::cpuNULL, &emu::JP_a16, &emu::cpuNULL, &emu::PUSH_BC, &emu::cpuNULL, &emu::cpuNULL, &emu::RET_Z, &emu::RET, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::CALL_a16, &emu::cpuNULL, &emu::cpuNULL,
+        &emu::RET_NZ, &emu::POP_BC, &emu::cpuNULL, &emu::JP_a16, &emu::cpuNULL, &emu::PUSH_BC, &emu::cpuNULL, &emu::cpuNULL, &emu::RET_Z, &emu::RET, &emu::cpuNULL, &emu::CB, &emu::cpuNULL, &emu::CALL_a16, &emu::cpuNULL, &emu::cpuNULL,
         
         //0xDX
         &emu::cpuNULL, &emu::POP_DE, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::PUSH_DE, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::RETI, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL,
@@ -464,6 +477,59 @@ private:
         //0xFX
         &emu::LDH_A_pa8, &emu::POP_AF, &emu::cpuNULL, &emu::DI, &emu::cpuNULL, &emu::PUSH_AF, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::cpuNULL, &emu::LD_A_pa16, &emu::EI, &emu::cpuNULL, &emu::cpuNULL, &emu::CP_d8, &emu::cpuNULL,
         
+        
+    };
+    
+    
+    bool (emu::*cb[16*16])() = {
+
+        //0x0X
+        &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL,
+        
+        //0x1X
+        &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL,
+        
+        //0x2X
+        &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL,
+        
+        //0x3X
+        &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::SWAP_A, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL,
+        
+        //0x4X
+        &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL,
+        
+        //0x5X
+        &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL,
+        
+        //0x6X
+        &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL,
+        
+        //0x7X
+        &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL,
+        
+        //0x8X
+        &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL,
+        
+        //0x9X
+        &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL,
+        
+        //0xAX
+        &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL,
+        
+        //0xBX
+        &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL,
+        
+        //0xCX
+        &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL,
+        
+        //0xDX
+        &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL,
+        
+        //0xEX
+        &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL,
+        
+        //0xFX
+        &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL, &emu::cpuCBNULL,
         
     };
     

@@ -184,6 +184,15 @@ unsigned char emu::xor8bit(unsigned char a,unsigned char b){
     return result;
 }
 
+unsigned char emu::swap8bit(unsigned char a){
+    unsigned char result = ((a&0xF0)>>4) | ((a&0x0F)<<4) ;
+    if (result == 0x0)
+        R[F] |= 0x8F;
+    else
+        R[F] &= 0x0F;
+    return result;
+}
+
 unsigned char emu::addition8bit(unsigned char a,unsigned char b, unsigned int z){
     
     unsigned int Z = z;
@@ -303,6 +312,17 @@ bool emu::LD_A_B(){
     return true;
 }
 
+
+bool emu::LD_A_C(){
+    if (debug)
+        std::cout<<"LD A D "<<std::endl;
+    R[A] = R[D];
+    PC ++;
+    add_counter();
+    return true;
+}
+
+
 bool emu::LD_A_D(){
     if (debug)
         std::cout<<"LD A D "<<std::endl;
@@ -329,6 +349,15 @@ bool emu::LD_B_d8(){
     R[B] = ReadMemory(PC + 1);
     PC += 2;
     add_counter(8);
+    return true;
+}
+
+bool emu::LD_C_A(){
+    if (debug)
+        std::cout<<"LD C A "<<std::endl;
+    R[C] = R[A];
+    PC ++;
+    add_counter();
     return true;
 }
 
@@ -626,6 +655,24 @@ bool emu::AND_A(){
     return true;
 }
 
+bool emu::AND_C(){
+    if (debug)
+        std::cout<<"AND C"<<std::endl;
+    R[A] = and8bit(R[A], R[C]);
+    PC++;
+    add_counter();
+    return true;
+}
+
+bool emu::OR_B(){
+    if (debug)
+        std::cout<<"OR B"<<std::endl;
+    R[A] = or8bit(R[A], R[B]);
+    PC++;
+    add_counter();
+    return true;
+}
+
 bool emu::OR_C(){
     if (debug)
         std::cout<<"OR C"<<std::endl;
@@ -639,6 +686,15 @@ bool emu::XOR_A(){
     if (debug)
         std::cout<<"XOR A"<<std::endl;
     R[A] = xor8bit(R[A], R[A]);
+    PC++;
+    add_counter();
+    return true;
+}
+
+bool emu::XOR_C(){
+    if (debug)
+        std::cout<<"XOR C"<<std::endl;
+    R[A] = xor8bit(R[A], R[C]);
     PC++;
     add_counter();
     return true;
@@ -737,14 +793,20 @@ bool emu::DEC_BC(){
 
 //+++++++++++++++++++++++++++Miscellaneous +++++++++++++++++++++++++++//
 
-
-bool emu::NOP(){
-    if (debug)
-        std::cout<<"NOP"<<std::endl;
+bool emu::CB(){
     PC++;
-    add_counter();
+    opcode = ReadMemory(PC);
+    return  (this->*cb[opcode])();
+}
+
+bool emu::SWAP_A(){
+    if (debug)
+        std::cout<<"SWAP A"<<std::endl;
+    R[A] = swap8bit(R[A]);
+    PC += 2;
     return true;
 }
+
 
 bool emu::CPL(){
     if (debug)
@@ -755,6 +817,15 @@ bool emu::CPL(){
     PC++;
     return true;
 }
+
+bool emu::NOP(){
+    if (debug)
+        std::cout<<"NOP"<<std::endl;
+    PC++;
+    add_counter();
+    return true;
+}
+
 
 bool emu::DI(){
     if (debug)
@@ -945,6 +1016,10 @@ bool emu::cpuNULL(){
     return false;
 }
 
+bool emu::cpuCBNULL(){
+    std::cout<<"operación no implementada: cb"<<std::hex<<int(opcode)<<std::endl;
+    return false;
+}
 
 bool emu::emulateCycle(){
 
